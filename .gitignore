@@ -1,0 +1,22 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build output
+bin/
+obj/
+
+# Logs
+*.log
+
+# Database
+*.mdf
+*.ldf
+*.dbmdl
+
+# Others
+*.vsidx
+*.sqlite
+*.nupkg
+*.DS_Store
