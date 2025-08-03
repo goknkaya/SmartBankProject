@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartBank.Domain.Entities
+namespace SmartBank.Application.DTOs.Customer
 {
-    public class Customer
+    public class SelectCustomerDto
     {
         public int Id { get; set; }
         public string FullName { get; set; }
@@ -20,6 +20,5 @@ namespace SmartBank.Domain.Entities
         public string? Country { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
     }
 }

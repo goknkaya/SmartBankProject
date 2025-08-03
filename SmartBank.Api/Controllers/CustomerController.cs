@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartBank.Application.Interfaces;
-using SmartBank.Application.DTOs;
+using SmartBank.Application.DTOs.Customer;
 
 namespace SmartBank.Api.Controllers
 {
@@ -28,34 +28,31 @@ namespace SmartBank.Api.Controllers
             var customer = await _customerService.GetCustomerByIdAsync(id);
 
             if (customer == null)
-                return NotFound();
+                return NotFound("Müşteri bulunamadı.");
 
             return Ok(customer);
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddCustomer([FromBody] CustomerDto customerDto)
+        public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerDto dto)
         {
-            var createdCustomer = await _customerService.AddCustomerAsync(customerDto);
-            return CreatedAtAction(nameof(GetCustomerById), new { id = createdCustomer.Id }, createdCustomer);
+            var result = await _customerService.CreateCustomerAsync(dto);
+            return result ? Ok("Müşteri başarıyla oluşturuldu.") : BadRequest("Müşteri oluşturulamadı.");
         }
 
-        [HttpPost("{id}")]
-        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CustomerDto customerDto)
+        [HttpPut]
+        public async Task<IActionResult> UpdateCustomer([FromBody] UpdateCustomerDto dto)
         {
-            try
-            {
-                var updatedCustomer = await _customerService.UpdateCustomerAsync(id, customerDto);
-                return Ok(updatedCustomer);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var result = await _customerService.UpdateCustomerAsync(dto);
+            return result ? Ok("Müşteri başarıyla güncellendi.") : BadRequest("Müşteri güncellenemedi.");
         }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteCustomer([FromBody] DeleteCustomerDto dto)
+        {
+            var result = await _customerService.DeleteCustomerAsync(dto);
+            return result ? Ok("Müşteri başarıyla silindi.") : BadRequest("Müşteri silinemedi.");
+        }
+
     }
 }

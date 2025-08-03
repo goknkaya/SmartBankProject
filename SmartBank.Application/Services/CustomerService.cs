@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using SmartBank.Application.DTOs;
+using SmartBank.Application.DTOs.Card;
+using SmartBank.Application.DTOs.Customer;
 using SmartBank.Application.Interfaces;
 using SmartBank.Domain.Entities;
 using SmartBank.Infrastructure.Persistence;
@@ -13,106 +10,114 @@ namespace SmartBank.Application.Services
 {
     public class CustomerService : ICustomerService
     {
-        private readonly SmartBankDbContext _dbContext;
+        private readonly CustomerCoreDbContext _dbContext;
+        private readonly IMapper _mapper;
 
-        public CustomerService(SmartBankDbContext dbContext)
+        public CustomerService(CustomerCoreDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
+            _mapper = mapper;
         }
 
         // Tum musteriler gelir
-        public async Task<List<CustomerDto>> GetAllCustomersAsync()
+        public async Task<List<SelectCustomerDto>> GetAllCustomersAsync()
         {
-            var result = await _dbContext.Customers.Select(c => new CustomerDto
-            {
-                FirstName = c.FirstName,
-                LastName = c.LastName,
-                Email = c.Email,
-                PhoneNumber = c.PhoneNumber,
-                NationalId = c.NationalId,
-                CreatedAt = c.CreatedAt
-            }).ToListAsync();
+            var customers = await _dbContext.Customers
+                .Where(c => c.IsActive)
+                .ToListAsync();
 
-            return result;
+            return _mapper.Map<List<SelectCustomerDto>>(customers);
         }
 
         // ID ' ye gore musteriler gelir
-        public async Task<CustomerDto> GetCustomerByIdAsync(int id)
+        public async Task<SelectCustomerDto?> GetCustomerByIdAsync(int id)
         {
-            var customer = await _dbContext.Customers.FindAsync(id);
+            var customer = await _dbContext.Customers
+                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
 
             if (customer == null)
-                return null;
+                throw new KeyNotFoundException("Müşteri bulunamadı.");
 
-            return new CustomerDto
-            {
-                FirstName = customer.FirstName,
-                LastName = customer.LastName,
-                Email = customer.Email,
-                PhoneNumber = customer.PhoneNumber,
-                NationalId = customer.NationalId,
-                CreatedAt = customer.CreatedAt
-            };
+            return _mapper.Map<SelectCustomerDto>(customer);
         }
 
         // Yeni musteri ekle
-        public async Task<Customer> AddCustomerAsync(CustomerDto customerDto)
+        public async Task<bool> CreateCustomerAsync(CreateCustomerDto dto)
         {
-            // TCKN kontrolu
-            if (await _dbContext.Customers.AnyAsync(c => c.NationalId == customerDto.NationalId))
-                throw new InvalidOperationException("Bu TCKN zaten sistemde kayıtlı.");
+            if (await _dbContext.Customers.AnyAsync(c => c.TCKN == dto.TCKN && c.IsActive))
+                throw new InvalidOperationException("Bu TCKN ile zaten kayıtlı bir müşteri var.");
 
-            // Mail kontrolu
-            if (await _dbContext.Customers.AnyAsync(c => c.Email == customerDto.Email))
-                throw new InvalidOperationException("Bu e-posta adresi zaten sistemde kayıtlı.");
+            if (await _dbContext.Customers.AnyAsync(c => c.Email == dto.Email && c.IsActive))
+                throw new InvalidOperationException("Bu e-posta adresi ile zaten kayıtlı bir müşteri var.");
 
-            // Telefon kontrolu - sadece farkli TCKN ile eslesiyorsa engelle
-            var existingPhone = await _dbContext.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == customerDto.PhoneNumber);
-            if (existingPhone != null && existingPhone.NationalId != customerDto.NationalId)
-                throw new InvalidOperationException("Bu telefon numarası başka bir kullanıcıya ait.");
+            if (await _dbContext.Customers.AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.IsActive))
+                throw new InvalidOperationException("Bu telefon numarası ile zaten kayıtlı bir müşteri var.");
 
-            // Yeni musteri nesnesi olustur
-            var newCustomer = new Customer
-            {
-                FirstName = customerDto.FirstName,
-                LastName = customerDto.LastName,
-                Email = customerDto.Email,
-                PhoneNumber = customerDto.PhoneNumber,
-                NationalId = customerDto.NationalId,
-                CreatedAt = customerDto.CreatedAt
-            };
+            var customer = _mapper.Map<Customer>(dto);
+            customer.IsActive = true;
+            customer.CreatedAt = DateTime.UtcNow;
+            customer.UpdatedAt = DateTime.UtcNow;
 
-            _dbContext.Customers.Add(newCustomer);
+            await _dbContext.Customers.AddAsync(customer);
             await _dbContext.SaveChangesAsync();
 
-            return newCustomer;
+            return true;
         }
+
 
         // Musteri guncelleme
-
-        public async Task<Customer> UpdateCustomerAsync(int id, CustomerDto customerDto)
+        public async Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto)
         {
-            var customer = await _dbContext.Customers.FindAsync(id);
+            var customer = await _dbContext.Customers
+                .FirstOrDefaultAsync(c => c.Id == dto.Id && c.IsActive);
+
             if (customer == null)
-                throw new InvalidOperationException("Müşteri bulunamadı.");
+                throw new InvalidOperationException("Güncellenecek müşteri bulunamadı.");
 
-            // Eşsiz alanlar için kontrol yapalım ama aynı ID' li kayıt dışında olacak şekilde
-            if (await _dbContext.Customers.AnyAsync(c => c.NationalId == customerDto.NationalId))
-                throw new InvalidOperationException("Bu TCKN başka bir müşteri tarafından kullanılıyor.");
+            // Email başka biri tarafından kullanılıyor mu?
+            if (!string.IsNullOrEmpty(dto.Email))
+            {
+                bool emailExists = await _dbContext.Customers
+                    .AnyAsync(c => c.Email == dto.Email && c.Id != dto.Id && c.IsActive);
 
-            if (await _dbContext.Customers.AnyAsync(c => c.Email == customerDto.Email))
-                throw new InvalidOperationException("Bu e-posta adresi başka bir müşteri tarafından kullanılıyor.");
+                if (emailExists)
+                    throw new InvalidOperationException("Bu e-posta adresi başka bir müşteri tarafından kullanılıyor.");
+            }
 
-            customer.FirstName = customerDto.FirstName;
-            customer.LastName = customerDto.LastName;
-            customer.Email = customerDto.Email;
-            customer.PhoneNumber = customerDto.PhoneNumber;
-            customer.NationalId = customerDto.NationalId;
-            customer.CreatedAt = customerDto.CreatedAt;
+            // Telefon başka biri tarafından kullanılıyor mu?
+            if (!string.IsNullOrEmpty(dto.PhoneNumber))
+            {
+                bool phoneExists = await _dbContext.Customers
+                    .AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.Id != dto.Id && c.IsActive);
+
+                if (phoneExists)
+                    throw new InvalidOperationException("Bu telefon numarası başka bir müşteri tarafından kullanılıyor.");
+            }
+
+            _mapper.Map(dto, customer);
+            customer.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
 
-            return customer;
+            return true;
         }
+
+
+        // Musteri silme
+        public async Task<bool> DeleteCustomerAsync(DeleteCustomerDto dto)
+        {
+            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == dto.Id && c.IsActive);
+            if (customer == null)
+                throw new InvalidOperationException("Silinmek istenen müşteri bulunamadı veya zaten pasif.");
+
+            customer.IsActive = false;
+            customer.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+
     }
 }

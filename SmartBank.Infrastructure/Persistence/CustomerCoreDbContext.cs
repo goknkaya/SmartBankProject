@@ -8,10 +8,11 @@ using SmartBank.Domain.Entities;
 
 namespace SmartBank.Infrastructure.Persistence
 {
-    public class SmartBankDbContext : DbContext
+    public class CustomerCoreDbContext : DbContext
     {
-        public SmartBankDbContext(DbContextOptions<SmartBankDbContext> options) : base(options) { }
+        public CustomerCoreDbContext(DbContextOptions<CustomerCoreDbContext> options) : base(options) { }
 
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<Card> Cards { get; set; }
     }
 }

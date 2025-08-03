@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartBank.Domain.Entities
+namespace SmartBank.Application.DTOs.Customer
 {
-    public class Customer
+    public class CreateCustomerDto
     {
-        public int Id { get; set; }
-        public string FullName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
         public string TCKN { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
@@ -18,8 +18,5 @@ namespace SmartBank.Domain.Entities
         public string? AddressLine { get; set; }
         public string? City { get; set; }
         public string? Country { get; set; }
-        public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
     }
 }

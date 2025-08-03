@@ -1,19 +1,20 @@
-﻿using System;
+﻿using SmartBank.Application.DTOs.Card;
+using SmartBank.Application.DTOs.Customer;
+using SmartBank.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SmartBank.Application.DTOs;
-using SmartBank.Domain.Entities;
 
 namespace SmartBank.Application.Interfaces
 {
     public interface ICustomerService
     {
-        Task<List<CustomerDto>> GetAllCustomersAsync();
-        Task<CustomerDto> GetCustomerByIdAsync(int id);
-        Task<Customer> AddCustomerAsync(CustomerDto customer);
-        Task<Customer> UpdateCustomerAsync(int id, CustomerDto customerDto);
-
+        Task<List<SelectCustomerDto>> GetAllCustomersAsync();
+        Task<SelectCustomerDto?> GetCustomerByIdAsync(int id);
+        Task<bool> CreateCustomerAsync(CreateCustomerDto dto);
+        Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto);
+        Task<bool> DeleteCustomerAsync(DeleteCustomerDto dto);
     }
 }
