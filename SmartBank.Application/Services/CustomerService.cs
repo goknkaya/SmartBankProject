@@ -104,9 +104,9 @@ namespace SmartBank.Application.Services
 
 
         // Musteri silme
-        public async Task<bool> DeleteCustomerAsync(DeleteCustomerDto dto)
+        public async Task<bool> DeleteCustomerAsync(int id)
         {
-            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == dto.Id && c.IsActive);
+            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
             if (customer == null)
                 throw new InvalidOperationException("Silinmek istenen müşteri bulunamadı veya zaten pasif.");
 

@@ -3,6 +3,8 @@ using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using SmartBank.Application.DTOs.Validators.Card;
 using SmartBank.Application.DTOs.Validators.Customer;
+using SmartBank.Application.DTOs.Validators.Transaction;
+using SmartBank.Application.DTOs.Validators.Reversal;
 using SmartBank.Application.Interfaces;
 using SmartBank.Application.Services;
 using SmartBank.Infrastructure.Persistence;
@@ -17,6 +19,8 @@ builder.Services.AddSwaggerGen();
 // ✅ AutoMapper
 builder.Services.AddAutoMapper(typeof(CardProfile));
 builder.Services.AddAutoMapper(typeof(CustomerProfile));
+builder.Services.AddAutoMapper(typeof(TransactionProfile));
+builder.Services.AddAutoMapper(typeof(ReversalProfile));
 
 // ✅ FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerDtoValidator>();
@@ -27,9 +31,15 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateCardDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCardDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<DeleteCardDtoValidator>();
 
+builder.Services.AddValidatorsFromAssemblyContaining<CreateTransactionDtoValidator>();
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
+
 // ✅ Dependency Injection
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IReversalService, ReversalService>();
 
 // ✅ Veritabanı bağlantısı
 builder.Services.AddDbContext<CustomerCoreDbContext>(options =>

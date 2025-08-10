@@ -1,0 +1,38 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SmartBank.Domain.Entities
+{
+    public class Transaction
+    {
+        public int Id { get; set; }
+
+        [Required]
+        public int CardId { get; set; }
+
+        [Required]
+        [MaxLength(3)]
+        public string Currency { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue)]
+        public decimal Amount { get; set; }
+
+        [Required]
+        [MaxLength(1)]
+        public string Status { get; set; } // S-uccess, F-ailed, R-eversed
+
+        public DateTime TransactionDate { get; set; }
+
+        [MaxLength(100)]
+        public string Description { get; set; }
+
+        public bool IsReversed { get; set; }
+
+        public virtual Card Card { get; set; }
+    }
+}

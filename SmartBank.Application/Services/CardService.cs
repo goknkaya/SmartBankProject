@@ -202,9 +202,9 @@ namespace SmartBank.Application.Services
 
 
         // Kart silme
-        public async Task<bool> DeleteCardAsync(DeleteCardDto dto)
+        public async Task<bool> DeleteCardAsync(int id)
         {
-            var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == dto.Id && c.IsActive);
+            var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
 
             if (card == null)
                 throw new InvalidOperationException("Silinmek istenen kart bulunamadı veya zaten pasif.");

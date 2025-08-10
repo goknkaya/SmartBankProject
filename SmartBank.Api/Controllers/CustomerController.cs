@@ -36,6 +36,9 @@ namespace SmartBank.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var result = await _customerService.CreateCustomerAsync(dto);
             return result ? Ok("Müşteri başarıyla oluşturuldu.") : BadRequest("Müşteri oluşturulamadı.");
         }
@@ -43,14 +46,20 @@ namespace SmartBank.Api.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateCustomer([FromBody] UpdateCustomerDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var result = await _customerService.UpdateCustomerAsync(dto);
             return result ? Ok("Müşteri başarıyla güncellendi.") : BadRequest("Müşteri güncellenemedi.");
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteCustomer([FromBody] DeleteCustomerDto dto)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCustomer(int id)
         {
-            var result = await _customerService.DeleteCustomerAsync(dto);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _customerService.DeleteCustomerAsync(id);
             return result ? Ok("Müşteri başarıyla silindi.") : BadRequest("Müşteri silinemedi.");
         }
 

@@ -15,6 +15,6 @@ namespace SmartBank.Application.Interfaces
         Task<SelectCustomerDto?> GetCustomerByIdAsync(int id);
         Task<bool> CreateCustomerAsync(CreateCustomerDto dto);
         Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto);
-        Task<bool> DeleteCustomerAsync(DeleteCustomerDto dto);
+        Task<bool> DeleteCustomerAsync(int id);
     }
 }

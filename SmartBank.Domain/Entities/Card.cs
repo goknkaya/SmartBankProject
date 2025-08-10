@@ -38,6 +38,8 @@ namespace SmartBank.Domain.Entities
 
         public bool IsActive { get; set; } = true;
 
+        public bool IsBlocked { get; set; }
+
         [Required]
         [MaxLength(64)]
         public string PinHash { get; set; }

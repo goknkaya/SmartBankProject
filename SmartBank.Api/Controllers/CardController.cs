@@ -32,6 +32,9 @@ namespace SmartBank.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCard([FromBody] CreateCardDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var result = await _cardService.CreateCardAsync(dto);
             return result ? Ok("Kart başarıyla oluşturuldu.") : BadRequest("Kart oluşturulamadı.");
         }
@@ -39,14 +42,20 @@ namespace SmartBank.Api.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateCard([FromBody] UpdateCardDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var result = await _cardService.UpdateCardAsync(dto);
             return result ? Ok("Kart başarıyla güncellendi.") : BadRequest("Kart güncellenemedi.");
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteCard([FromBody] DeleteCardDto dto)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCard(int id)
         {
-            var result = await _cardService.DeleteCardAsync(dto);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _cardService.DeleteCardAsync(id);
             return result ? Ok("Kart başarıyla silindi.") : BadRequest("Kart silinemedi.");
         }
     }
