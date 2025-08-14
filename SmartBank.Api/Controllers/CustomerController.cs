@@ -22,46 +22,41 @@ namespace SmartBank.Api.Controllers
             return Ok(customers);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetCustomerById(int id)
         {
             var customer = await _customerService.GetCustomerByIdAsync(id);
-
-            if (customer == null)
-                return NotFound("Müşteri bulunamadı.");
-
-            return Ok(customer);
+            return Ok(customer); // service bulunamazsa zaten exception atıyor
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var ok = await _customerService.CreateCustomerAsync(dto);
+            if (!ok) return BadRequest("Müşteri oluşturulamadı.");
 
-            var result = await _customerService.CreateCustomerAsync(dto);
-            return result ? Ok("Müşteri başarıyla oluşturuldu.") : BadRequest("Müşteri oluşturulamadı.");
+            // Varsa döneceğin id'yi service'ten alıp CreatedAtAction ile dönmek daha iyi olur
+            // şimdilik 200 dönelim:
+            return Ok("Müşteri başarıyla oluşturuldu.");
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateCustomer([FromBody] UpdateCustomerDto dto)
+        // Route id ile, body'deki Id'yi eşitle
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (dto.Id != 0 && dto.Id != id)
+                return BadRequest("Body'deki Id ile route Id aynı olmalı.");
 
-            var result = await _customerService.UpdateCustomerAsync(dto);
-            return result ? Ok("Müşteri başarıyla güncellendi.") : BadRequest("Müşteri güncellenemedi.");
+            dto.Id = id;
+            var ok = await _customerService.UpdateCustomerAsync(dto);
+            return ok ? Ok("Müşteri başarıyla güncellendi.") : BadRequest("Müşteri güncellenemedi.");
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _customerService.DeleteCustomerAsync(id);
-            return result ? Ok("Müşteri başarıyla silindi.") : BadRequest("Müşteri silinemedi.");
+            var ok = await _customerService.DeleteCustomerAsync(id);
+            return ok ? Ok("Müşteri başarıyla silindi.") : BadRequest("Müşteri silinemedi.");
         }
-
     }
 }

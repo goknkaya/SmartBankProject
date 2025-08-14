@@ -134,6 +134,12 @@ namespace SmartBank.Application.Services
                 reversal.IsCardLimitRestored = false;
             }
 
+            if (reversal.Transaction != null)
+            {
+                reversal.Transaction.IsReversed = false;
+                _dbContext.Transactions.Update(reversal.Transaction);
+            }
+
             reversal.Status = "V";
             reversal.VoidedBy = performedBy;
             reversal.VoidReason = reason;

@@ -34,7 +34,7 @@ namespace SmartBank.Application.DTOs.Validators.Customer
 
             RuleFor(x => x.Gender)
                 .NotEmpty().WithMessage("Cinsiyet boş olamaz.")
-                .Must(g => g == "E" || g == "K").WithMessage("Cinsiyet 'E' (Erkek) veya 'K' (Kadın) olmalıdır.");
+                .Must(g => g == "M" || g == "F").WithMessage("Cinsiyet 'E' (Erkek) veya 'K' (Kadın) olmalıdır.");
 
             RuleFor(x => x.AddressLine)
                 .NotEmpty().WithMessage("Adres boş olamaz.")

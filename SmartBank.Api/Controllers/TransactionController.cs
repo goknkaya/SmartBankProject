@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartBank.Application.Interfaces;
 using SmartBank.Application.DTOs.Transaction;
+using System.ComponentModel.DataAnnotations;
 
 namespace SmartBank.Api.Controllers
 {
@@ -57,11 +58,22 @@ namespace SmartBank.Api.Controllers
         /// <summary>
         /// Belirli bir kart ID' sine ait işlemleri getirir.
         /// </summary>
-        [HttpGet("card/{cardId}")]
-        public async Task<IActionResult> GetByCardId(int cardId)
+        [HttpGet("card/{cardId:int}")]
+        public async Task<IActionResult> GetByCardId([FromRoute, Range(1, int.MaxValue)] int cardId)
         {
-            var result = await _transactionService.GetTransactionByCardIdAsync(cardId);
-            return Ok(result);
+            try
+            {
+                var result = await _transactionService.GetTransactionByCardIdAsync(cardId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new {message = ex.Message});
+            }
         }
     }
 }

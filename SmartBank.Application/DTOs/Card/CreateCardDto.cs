@@ -26,6 +26,7 @@ namespace SmartBank.Application.DTOs.Card
         public bool IsContactless { get; set; }
         public bool IsBlocked { get; set; }
 
+
         // Limit Bilgileri
         public decimal CardLimit { get; set; }
         public decimal DailyLimit { get; set; }

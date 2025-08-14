@@ -15,7 +15,8 @@ namespace SmartBank.Application.DTOs.Card
         public string? CardStatusDescription { get; set; }
         public bool? IsBlocked { get; set; }
         public bool? IsContactless { get; set; }
-        public bool? IsVirtual { get; set; }  // Eksikti, ekliyoruz
+        public bool? IsVirtual { get; set; }
+
 
         // Limit Bilgileri
         public decimal? CardLimit { get; set; }        // Create'de vardı, update için ekliyoruz

@@ -19,47 +19,86 @@ namespace SmartBank.Application.Services
         }
         public async Task<bool> CreateTransactionAsync(CreateTransactionDto dto)
         {
-            // 1. Kart var mı kontrolü
-            var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == dto.CardId && c.IsActive);
-            if (card == null)
-                throw new InvalidOperationException("İşlem yapılacak kart bulunamadı veya müşteriye ait değil.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            // 2. Kart blokeli mi kontrolü
+            // 0) Baz doğrulamalar
+            if (dto.Amount <= 0)
+                throw new InvalidOperationException("İşlem tutarı sıfırdan büyük olmalıdır.");
+
+            if (string.IsNullOrWhiteSpace(dto.Currency) || dto.Currency.Length != 3)
+                throw new InvalidOperationException("Para birimi 3 haneli olmalıdır (örn: TRY).");
+
+            // 1) Kart + durum kontrolü (tracking açık olmalı çünkü limiti güncelleyeceğiz)
+            var card = await _dbContext.Cards
+                .FirstOrDefaultAsync(c => c.Id == dto.CardId && c.IsActive);
+
+            if (card == null)
+                throw new InvalidOperationException("İşlem yapılacak kart bulunamadı veya pasif.");
+
             if (card.IsBlocked)
                 throw new InvalidOperationException("Bu kart blokeli olduğundan işlem yapılamaz.");
 
-            // 3. Limit kontrolleri
+            // 2) Günlük harcama (bugün) — sadece başarılı ve reverse edilmemiş işlemler
+            var todayUtc = DateTime.UtcNow.Date;
+            var spentToday = await _dbContext.Transactions
+                .Where(t => t.CardId == dto.CardId
+                            && t.Status == "S"
+                            && !t.IsReversed
+                            && t.TransactionDate >= todayUtc
+                            && t.TransactionDate < todayUtc.AddDays(1))
+                .SumAsync(t => (decimal?)t.Amount) ?? 0m;
+
+            // 3) Limit kontrolleri (sıra ÖNEMLİ)
+            // 3.1) Tek işlem limiti
             if (dto.Amount > card.TransactionLimit)
                 throw new InvalidOperationException("İşlem tutarı, tek işlem limitini aşıyor.");
 
-            if (dto.Amount > card.DailyLimit)
-                throw new InvalidOperationException("İşlem tutarı, günlük limiti aşıyor.");
+            // 3.2) Günlük limit (bugün harcanan + yeni işlem)
+            var willBeToday = spentToday + dto.Amount;
+            if (willBeToday > card.DailyLimit)
+            {
+                var kalan = card.DailyLimit - spentToday;
+                throw new InvalidOperationException(
+                    $"İşlem tutarı, günlük limiti aşıyor. Kalan günlük limit: {kalan:0.##}");
+            }
 
+            // 3.3) Kart bakiyesi (kalan limit)
             if (dto.Amount > card.CardLimit)
                 throw new InvalidOperationException("Yetersiz bakiye.");
 
-            // 4. İşlem oluştur
-            var transaction = new Transaction
+            // 4) Atomik işlem (kart limitini düş + transaction kaydını ekle)
+            using var tx = await _dbContext.Database.BeginTransactionAsync();
+            try
             {
-                CardId = dto.CardId,
-                Amount = dto.Amount,
-                Currency = dto.Currency,
-                Description = dto.Description,
-                TransactionDate = dto.TransactionDate,
-                Status = "S", //Successfull
-                IsReversed = false
-            };
+                var transaction = new Transaction
+                {
+                    CardId = dto.CardId,
+                    Amount = dto.Amount,
+                    Currency = dto.Currency,
+                    Description = dto.Description,
+                    TransactionDate = dto.TransactionDate == default ? DateTime.UtcNow : dto.TransactionDate,
+                    Status = "S",
+                    IsReversed = false
+                };
 
-            // 5. Bakiyeden düş
-            card.CardLimit -= dto.Amount;
-            card.UpdatedAt = DateTime.UtcNow;
+                card.CardLimit -= dto.Amount;
+                card.UpdatedAt = DateTime.UtcNow;
 
-            _dbContext.Transactions.Add(transaction);
-            _dbContext.Cards.Update(card);
+                _dbContext.Transactions.Add(transaction);
+                _dbContext.Cards.Update(card);
 
-            await _dbContext.SaveChangesAsync();
-            return true;
+                await _dbContext.SaveChangesAsync();
+                await tx.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
+
         public async Task<List<SelectTransactionDto>> GetAllTransactionsAsync()
         {
             var transactions = await _dbContext.Transactions.ToListAsync();
@@ -78,8 +117,20 @@ namespace SmartBank.Application.Services
 
         public async Task<List<SelectTransactionDto>> GetTransactionByCardIdAsync(int cardId)
         {
+            if (cardId < 0)
+                throw new ArgumentException("Geçersiz kart Id.");
+
+            var cardExists = await _dbContext.Cards
+                                            .AsNoTracking()
+                                            .AnyAsync(c => c.Id == cardId && c.IsActive);
+
+            if (!cardExists)
+                throw new KeyNotFoundException("Kart bulunamadı veya pasif.");
+
             var transactions = await _dbContext.Transactions
+                .AsNoTracking()
                 .Where(t=>t.CardId == cardId)
+                .OrderByDescending(t=>t.TransactionDate)
                 .ToListAsync();
 
             return _mapper.Map<List<SelectTransactionDto>>(transactions).ToList();

@@ -12,91 +12,76 @@ namespace SmartBank.Application.DTOs.Validators.Card
     {
         public UpdateCardDtoValidator()
         {
+            // Id
             RuleFor(x => x.Id)
                 .GreaterThan(0)
-                .WithMessage("Kart güncelleme işlemi için geçerli bir ID girilmelidir.");
+                .WithMessage("Kart güncelleme için geçerli bir Id girilmelidir.");
 
-            When(x => x.CardStatus != null, () =>
-            {
-                RuleFor(x => x.CardStatus)
-                    .NotEmpty().WithMessage("Kart durumu boş olamaz.")
-                    .MaximumLength(1).WithMessage("Kart durumu en fazla 1 karakter olmalıdır.");
-            });
+            // CardStatus
+            RuleFor(x => x.CardStatus)
+                .NotEmpty().WithMessage("Kart durumu boş olamaz.")
+                .MaximumLength(1).WithMessage("Kart durumu en fazla 1 karakter olmalıdır.")
+                .Must(cs => cs is null || new[] { "A", "B", "C" }.Contains(cs))
+                .WithMessage("Kart durumu yalnızca 'A' (Aktif), 'B' (Bloke) veya 'C' (İptal) olabilir.")
+                .When(x => x.CardStatus != null);
 
-            When(x => x.CardStatusDescription != null, () =>
-            {
-                RuleFor(x => x.CardStatusDescription)
-                    .MaximumLength(250).WithMessage("Açıklama en fazla 250 karakter olabilir.");
-            });
+            // CardStatusDescription
+            RuleFor(x => x.CardStatusDescription)
+                .MaximumLength(250)
+                .WithMessage("Kart durumu açıklaması en fazla 250 karakter olabilir.")
+                .When(x => x.CardStatusDescription != null);
 
-            When(x => x.IsBlocked != null, () =>
-            {
-                RuleFor(x => x.IsBlocked)
-                    .Must(x => x == true || x == false)
-                    .WithMessage("Bloke bilgisi sadece true ya da false olmalıdır.");
-            });
+            // CardLimit
+            RuleFor(x => x.CardLimit)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("Kart limiti negatif olamaz.")
+                .When(x => x.CardLimit.HasValue);
 
-            When(x => x.IsContactless != null, () =>
-            {
-                RuleFor(x => x.IsContactless)
-                    .Must(x => x == true || x == false)
-                    .WithMessage("Temassız bilgisi sadece true ya da false olmalıdır.");
-            });
+            // DailyLimit
+            RuleFor(x => x.DailyLimit)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("Günlük limit negatif olamaz.")
+                .When(x => x.DailyLimit.HasValue);
 
-            When(x => x.IsVirtual != null, () =>
-            {
-                RuleFor(x => x.IsVirtual)
-                    .Must(x => x == true || x == false)
-                    .WithMessage("Sanal kart bilgisi sadece true ya da false olmalıdır.");
-            });
+            // TransactionLimit
+            RuleFor(x => x.TransactionLimit)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("İşlem limiti negatif olamaz.")
+                .When(x => x.TransactionLimit.HasValue);
 
-            When(x => x.CardLimit != null, () =>
-            {
-                RuleFor(x => x.CardLimit)
-                    .GreaterThanOrEqualTo(0).WithMessage("Kart limiti negatif olamaz.");
-            });
+            // FailedPinAttempts
+            RuleFor(x => x.FailedPinAttempts)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("Başarısız PIN deneme sayısı negatif olamaz.")
+                .When(x => x.FailedPinAttempts.HasValue);
 
-            When(x => x.DailyLimit != null, () =>
-            {
-                RuleFor(x => x.DailyLimit)
-                    .GreaterThanOrEqualTo(0).WithMessage("Günlük limit negatif olamaz.");
-            });
+            // CardStatusChangeReason
+            RuleFor(x => x.CardStatusChangeReason)
+                .MaximumLength(250)
+                .WithMessage("Kart durumu değişim sebebi en fazla 250 karakter olabilir.")
+                .When(x => x.CardStatusChangeReason != null);
 
-            When(x => x.TransactionLimit != null, () =>
-            {
-                RuleFor(x => x.TransactionLimit)
-                    .GreaterThanOrEqualTo(0).WithMessage("İşlem limiti negatif olamaz.");
-            });
+            // CardProvider (Uzunluk + whitelist)
+            RuleFor(x => x.CardProvider)
+                .MaximumLength(50)
+                .WithMessage("Kart sağlayıcı adı en fazla 50 karakter olabilir.")
+                .When(x => x.CardProvider != null);
 
-            When(x => x.FailedPinAttempts != null, () =>
-            {
-                RuleFor(x => x.FailedPinAttempts)
-                    .GreaterThanOrEqualTo(0).WithMessage("Hatalı pin denemesi negatif olamaz.");
-            });
+            RuleFor(x => x.CardProvider)
+                .Must(cp => cp is null || new[] { "V", "M", "T" }.Contains(cp))
+                .WithMessage("Card Provider yalnızca 'V' (Visa), 'M' (Mastercard) veya 'T' (Troy) olabilir.")
+                .When(x => x.CardProvider != null);
 
-            When(x => x.CardStatusChangeReason != null, () =>
-            {
-                RuleFor(x => x.CardStatusChangeReason)
-                    .MaximumLength(250).WithMessage("Durum değişim açıklaması en fazla 250 karakter olabilir.");
-            });
+            // CardIssuerBank
+            RuleFor(x => x.CardIssuerBank)
+                .MaximumLength(100).WithMessage("Kartı basan banka en fazla 100 karakter olabilir.")
+                .When(x => !string.IsNullOrWhiteSpace(x.CardIssuerBank));
 
-            When(x => x.CardProvider != null, () =>
-            {
-                RuleFor(x => x.CardProvider)
-                    .MaximumLength(100).WithMessage("Kart sağlayıcı en fazla 100 karakter olabilir.");
-            });
-
-            When(x => x.CardIssuerBank != null, () =>
-            {
-                RuleFor(x => x.CardIssuerBank)
-                    .MaximumLength(100).WithMessage("Kartı basan banka en fazla 100 karakter olabilir.");
-            });
-
-            When(x => x.ParentCardId != null, () =>
-            {
-                RuleFor(x => x.ParentCardId)
-                    .GreaterThan(0).WithMessage("Ana kart ID'si pozitif bir sayı olmalıdır.");
-            });
+            // ParentCardId
+            RuleFor(x => x.ParentCardId)
+                .GreaterThan(0)
+                .WithMessage("Parent Card Id değeri 0'dan büyük olmalıdır.")
+                .When(x => x.ParentCardId.HasValue);
         }
     }
 }
