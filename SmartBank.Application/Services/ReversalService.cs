@@ -21,57 +21,68 @@ namespace SmartBank.Application.Services
         // 1) CREATE
         public async Task<bool> CreateReversalAsync(CreateReversalDto dto)
         {
-            var transaction = await _dbContext.Transactions
-                .Include(t => t.Card)
+            // atomic çalışalım
+            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
+            // 1) İşlem var mı?
+            var txEntity = await _dbContext.Transactions
+                .AsNoTracking()                    // kartı ayrıca çekeceğiz; tracking karışmasın
                 .FirstOrDefaultAsync(t => t.Id == dto.TransactionId);
 
-            if (transaction == null)
+            if (txEntity == null)
                 throw new InvalidOperationException("İlgili işlem bulunamadı.");
 
-            if (transaction.IsReversed)
+            if (txEntity.IsReversed)
                 throw new InvalidOperationException("Bu işlem zaten geri alınmış.");
 
+            // 2) Basit validasyonlar
             if (dto.ReversedAmount <= 0)
                 throw new InvalidOperationException("Reversal tutarı sıfırdan büyük olmalıdır.");
 
             // Faz-1: sadece tam reversal
-            if (dto.ReversedAmount != transaction.Amount)
+            if (dto.ReversedAmount != txEntity.Amount)
                 throw new InvalidOperationException("Şimdilik sadece tam reversal desteklenmektedir.");
 
             if (string.IsNullOrWhiteSpace(dto.PerformedBy))
                 throw new InvalidOperationException("Reversal işlemi yapan kullanıcı zorunludur.");
 
+            // 3) Kartı ayrı query ile T R A C K E D çek ve güncelle
+            var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == txEntity.CardId);
             bool isCardLimitRestored = false;
-            var card = transaction.Card;
 
             if (card != null && card.IsActive && !card.IsBlocked)
             {
-                card.CardLimit += dto.ReversedAmount;
+                card.CardLimit += dto.ReversedAmount;   // iade
                 card.UpdatedAt = DateTime.UtcNow;
                 _dbContext.Cards.Update(card);
                 isCardLimitRestored = true;
             }
 
+            // 4) Transaction.IsReversed işaretle (attach + partial update ile)
+            var txToUpdate = new Transaction { Id = txEntity.Id, IsReversed = true };
+            _dbContext.Transactions.Attach(txToUpdate);
+            _dbContext.Entry(txToUpdate).Property(x => x.IsReversed).IsModified = true;
+
+            // 5) Reversal kaydını oluştur
             var reversal = new Reversal
             {
-                TransactionId = dto.TransactionId,
+                TransactionId = txEntity.Id,
                 Reason = dto.Reason,
                 ReversedAmount = dto.ReversedAmount,
-                Status = "S",                           // Successful
+                Status = "S",                              // Successful
                 PerformedBy = dto.PerformedBy,
                 ReversalDate = DateTime.UtcNow,
                 ReversalSource = dto.ReversalSource,
                 IsCardLimitRestored = isCardLimitRestored
             };
-
-            // Tam reversal olduğu için işaretle
-            transaction.IsReversed = true;
-            _dbContext.Transactions.Update(transaction);
-
             _dbContext.Reversals.Add(reversal);
+
+            // 6) Kaydet ve commit
             await _dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
             return true;
         }
+
 
         // 2) GET ALL
         public async Task<List<SelectReversalDto>> GetAllReversalsAsync()
