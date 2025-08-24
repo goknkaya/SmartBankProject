@@ -1,61 +1,64 @@
-﻿using FluentValidation;
-using FluentValidation.AspNetCore;
+﻿using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using SmartBank.Application.DTOs.Validators.Card;
-using SmartBank.Application.DTOs.Validators.Customer;
-using SmartBank.Application.DTOs.Validators.Transaction;
-using SmartBank.Application.DTOs.Validators.Reversal;
-using SmartBank.Application.Interfaces;
-using SmartBank.Application.Services;
-using SmartBank.Infrastructure.Persistence;
-using SmartBank.Application.MappingProfiles;
+using Microsoft.OpenApi.Models;
+
+// SmartBank katmanları
+using SmartBank.Infrastructure.Persistence;            // CustomerCoreDbContext
+using SmartBank.Application.Interfaces;               // IClearingService
+using SmartBank.Application.Services;                 // ClearingService
+using SmartBank.Application.MappingProfiles;          // ClearingProfile
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers + FluentValidation middleware
-builder.Services.AddControllers();
-builder.Services.AddFluentValidationAutoValidation();          // ⇦ otomatik server-side validation
-builder.Services.AddFluentValidationClientsideAdapters();      // ⇦ opsiyonel (Swagger/UI tarafı için)
+// ---- DbContext ----
+// appsettings.json içinde "ConnectionStrings:DefaultConnection" olmalı
+builder.Services.AddDbContext<CustomerCoreDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Swagger
+// ---- AutoMapper ----
+builder.Services.AddAutoMapper(typeof(ClearingProfile).Assembly);
+
+// ---- Uygulama Servisleri (DI) ----
+builder.Services.AddScoped<IClearingService, ClearingService>();
+
+// ---- Controllers + JSON ----
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
+
+// ---- Swagger ----
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// AutoMapper (tek satırda tüm profilleri assembly’den yükler)
-builder.Services.AddAutoMapper(typeof(CardProfile).Assembly);
-
-// FluentValidation: validator’ları tara
-builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UpdateCustomerDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<DeleteCustomerDtoValidator>();
-
-builder.Services.AddValidatorsFromAssemblyContaining<CreateCardDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UpdateCardDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<DeleteCardDtoValidator>();
-
-builder.Services.AddValidatorsFromAssemblyContaining<CreateTransactionDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
-
-// DI
-builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<ICardService, CardService>();
-builder.Services.AddScoped<ITransactionService, TransactionService>();
-builder.Services.AddScoped<IReversalService, ReversalService>();
-
-// DbContext
-builder.Services.AddDbContext<CustomerCoreDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmartBank API", Version = "v1" });
+    c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
+    c.CustomSchemaIds(t => t.FullName);
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+});
 
 var app = builder.Build();
 
-// Swagger
+// ---- Dev ortamında Swagger ----
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBank API v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
 app.MapControllers();
+
+// Basit sağlık kontrolü (opsiyonel)
+app.MapGet("/healthz", () => "ok");
+
 app.Run();
