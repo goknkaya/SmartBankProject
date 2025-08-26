@@ -26,7 +26,10 @@ namespace SmartBank.Domain.Entities.Switching
         public string Status { get; set; } = "Pending"; // Pending/Approved/Declined
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int? TransactionId { get; set; } // opsiyonel: Approved olursa dolduruyoruz
-        public string? ExternalId { get; set; }  // STAN/RRN/AcquirerRef
+
+        [Required]
+        [MaxLength(64)]
+        public string ExternalId { get; set; } = default!;  // STAN/RRN/AcquirerRef
         public int? CardId { get; set; }         // Onaylandıysa dolu
         public Card? Card { get; set; }
     }

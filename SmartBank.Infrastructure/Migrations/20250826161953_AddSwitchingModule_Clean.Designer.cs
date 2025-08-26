@@ -12,8 +12,8 @@ using SmartBank.Infrastructure.Persistence;
 namespace SmartBank.Infrastructure.Migrations
 {
     [DbContext(typeof(CustomerCoreDbContext))]
-    [Migration("20250826153342_AddSwitchingModule")]
-    partial class AddSwitchingModule
+    [Migration("20250826161953_AddSwitchingModule_Clean")]
+    partial class AddSwitchingModule_Clean
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

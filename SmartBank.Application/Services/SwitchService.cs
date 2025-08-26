@@ -22,118 +22,140 @@ namespace SmartBank.Application.Services
 
         public async Task<SelectSwitchMessageDto> ProcessMessageAsync(CreateSwitchMessageDto dto)
         {
-            // ---------- 0) Normalize ----------
-            var cleanPan = (dto.PAN ?? string.Empty).Replace(" ", "");
+            // -- 0) Normalize
+            var cleanPan = (dto.PAN ?? "").Replace(" ", "");
             var bin = cleanPan.Length >= 6 ? cleanPan[..6] : cleanPan;
-            var ccy = (dto.Currency ?? "TRY").ToUpperInvariant();
-            var acquirer = dto.Acquirer ?? "DemoPOS";
+            var cur = (dto.Currency ?? "TRY").ToUpperInvariant();
+            var txTime = (dto.TxnTime ?? dto.TxnTime ?? DateTime.UtcNow).ToUniversalTime();
 
-            // ---------- 1) BIN → Issuer ----------
+            // -- 1) Issuer
             var issuer = await _dbContext.CardBins
-                .AsNoTracking()
                 .Where(b => b.IsActive && b.Bin == bin)
                 .Select(b => b.Issuer)
                 .FirstOrDefaultAsync() ?? "Unknown";
 
-            // ---------- 2) SwitchMessage: Pending ----------
+            // -- 2) ExternalId (aynı body -> aynı id)
+            var externalId = $"{dto.Acquirer}|{bin}|{dto.Amount:0.00}|{cur}|{txTime:yyyyMMddHHmmss}";
+
+            // -- 3) Idempotency (uygulama katmanı) — insert'ten ÖNCE
+            var alreadyExists = await _dbContext.SwitchMessages.AsNoTracking().AnyAsync(x =>
+                x.Acquirer == dto.Acquirer &&
+                x.ExternalId == externalId
+            // .Status == "Approved"  // sadece Approved'a sıkılamak istersen aç
+            );
+
+            if (alreadyExists)
+            {
+                return new SelectSwitchMessageDto
+                {
+                    Id = 0,
+                    PANMasked = MaskPan(cleanPan),
+                    Bin = bin,
+                    Amount = dto.Amount,
+                    Currency = cur,
+                    Acquirer = dto.Acquirer,
+                    Issuer = issuer,
+                    Status = "Declined",
+                    CreatedAt = DateTime.UtcNow,
+                    TransactionId = null
+                };
+            }
+
+            // -- 4) Mesajı ekle (DB unique index fallback'i ile)
             var msg = new SwitchMessage
             {
                 PANMasked = MaskPan(cleanPan),
                 Bin = bin,
                 Amount = dto.Amount,
-                Currency = ccy,
-                Acquirer = acquirer,
+                Currency = dto.Currency.ToUpperInvariant(),
+                Acquirer = dto.Acquirer,
                 Issuer = issuer,
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow,
-
-                // Dış sistem reference varsa buraya koymalısın (STAN/RRN). Örn. dto’ya ExternalId eklersen direkt ata.
-                // Demo amaçlı: TxTime varsa onu ExternalId gibi kullanıyoruz (idempotency göstermek için).
-                ExternalId = dto.TxnTime.HasValue ? dto.TxnTime.Value.Ticks.ToString() : null
+                ExternalId = externalId
             };
 
-            _dbContext.SwitchMessages.Add(msg);
-            await _dbContext.SaveChangesAsync();
+            try
+            {
+                _dbContext.SwitchMessages.Add(msg);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2601 or 2627)
+            {
+                return new SelectSwitchMessageDto
+                {
+                    Id = 0,
+                    PANMasked = msg.PANMasked,
+                    Bin = msg.Bin,
+                    Amount = msg.Amount,
+                    Currency = msg.Currency,
+                    Acquirer = msg.Acquirer,
+                    Issuer = msg.Issuer,
+                    Status = "Declined",
+                    CreatedAt = DateTime.UtcNow,
+                    TransactionId = null
+                };
+            }
 
-            await LogAsync(msg.Id, "Received", "INFO", "Mesaj alındı", payloadIn: ToJson(dto));
+            await LogAsync(msg.Id, "Received", "INFO", "Mesaj alındı",
+                payloadIn: System.Text.Json.JsonSerializer.Serialize(dto));
 
-            // ---------- 3) Sadece gerçek kartlara izin ----------
-            // Tam PAN eşleşmesi (demo: CardNumber direkt tutuluyorsa; prod'da PAN hash kullanılmalı)
-            var card = await _dbContext.Cards
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.IsActive && c.CardNumber.Replace(" ", "") == cleanPan);
-
-            if (issuer == "Unknown" || dto.Amount <= 0 || card == null)
+            // -- 5) Basit kurallar
+            if (issuer == "Unknown" || dto.Amount <= 0)
             {
                 msg.Status = "Declined";
                 await _dbContext.SaveChangesAsync();
-                await LogAsync(msg.Id, "Responded", "INFO", "Declined (issuer/amount/card rule)");
+                await LogAsync(msg.Id, "Responded", "INFO", "Declined");
                 return _mapper.Map<SelectSwitchMessageDto>(msg);
             }
 
-            // Kart bulundu → bağla
-            msg.CardId = card.Id;
-            await _dbContext.SaveChangesAsync();
+            // -- 6) Kart ve muhtemel tx duplicate guard
+            // (Gerçekte tam PAN ile eşleştir; demo için last4).
+            string last4 = cleanPan.Length >= 4 ? cleanPan[^4..] : cleanPan;
+            var card = await _dbContext.Cards.AsNoTracking()
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefaultAsync(c => c.CardNumber.Replace(" ", "").EndsWith(last4));
 
-            // ---------- 4) Idempotency (Acquirer + ExternalId) ----------
-            if (!string.IsNullOrWhiteSpace(msg.ExternalId))
+            if (card != null)
+                msg.CardId = card.Id;
+
+            if (card != null)
             {
-                bool dupApproved = await _dbContext.SwitchMessages.AsNoTracking().AnyAsync(x =>
-                    x.Acquirer == msg.Acquirer &&
-                    x.ExternalId == msg.ExternalId &&
-                    x.Issuer == msg.Issuer &&
-                    x.Amount == msg.Amount &&
-                    x.Currency == msg.Currency &&
-                    x.Status == "Approved");
+                var existsTx = await _dbContext.Transactions.AsNoTracking().AnyAsync(t =>
+                    t.CardId == card.Id &&
+                    t.Amount == dto.Amount &&
+                    t.Currency == cur &&
+                    t.TransactionDate >= txTime.AddMinutes(-1) &&
+                    t.TransactionDate <= txTime.AddMinutes(1));
 
-                if (dupApproved)
+                if (!existsTx)
                 {
-                    msg.Status = "Declined";
+                    var tx = new Transaction
+                    {
+                        CardId = card.Id,
+                        Currency = cur,
+                        Amount = dto.Amount,
+                        Status = "S",
+                        TransactionDate = txTime,
+                        Description = dto.MerchantName ?? $"{dto.Acquirer}-{issuer}",
+                        IsReversed = false,
+                        AcquirerRef = msg.ExternalId
+                    };
+                    _dbContext.Transactions.Add(tx);
                     await _dbContext.SaveChangesAsync();
-                    await LogAsync(msg.Id, "Responded", "INFO", "Declined (idempotent duplicate)");
-                    return _mapper.Map<SelectSwitchMessageDto>(msg);
+                    msg.TransactionId = tx.Id;
                 }
             }
 
-            // ---------- 5) Duplicate guard (aynı kart + aynı tutar/ccy + ±1 dk) ----------
-            var txTime = dto.TxnTime ?? DateTime.UtcNow;
-            bool existsTx = await _dbContext.Transactions.AsNoTracking().AnyAsync(t =>
-                t.CardId == card.Id &&
-                t.Amount == dto.Amount &&
-                t.Currency == ccy &&
-                t.TransactionDate >= txTime.AddMinutes(-1) &&
-                t.TransactionDate <= txTime.AddMinutes(1));
-
-            if (!existsTx)
-            {
-                var tx = new Transaction
-                {
-                    CardId = card.Id,
-                    Currency = ccy,
-                    Amount = dto.Amount,
-                    Status = "S",
-                    TransactionDate = txTime,
-                    Description = dto.MerchantName ?? $"{acquirer}-{issuer}",
-                    IsReversed = false,
-
-                    // Transaction’a AcquirerRef alanını eklediysen:
-                    AcquirerRef = msg.ExternalId
-                };
-
-                _dbContext.Transactions.Add(tx);
-                await _dbContext.SaveChangesAsync();
-
-                msg.TransactionId = tx.Id;
-                await _dbContext.SaveChangesAsync();
-            }
-
-            // ---------- 6) Onayla ----------
+            // -- 7) Son kararı kaydet
             msg.Status = "Approved";
             await _dbContext.SaveChangesAsync();
-            await LogAsync(msg.Id, "Responded", "INFO", "Approved", payloadOut: "{\"status\":\"Approved\"}");
+            await LogAsync(msg.Id, "Responded", "INFO", "Approved",
+                payloadOut: "{\"status\":\"Approved\"}");
 
             return _mapper.Map<SelectSwitchMessageDto>(msg);
         }
+
 
         public async Task<List<SelectSwitchMessageDto>> GetMessagesAsync(string? status = null, string? issuer = null)
         {

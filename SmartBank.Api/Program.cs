@@ -4,7 +4,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
-using SmartBank.Infrastructure.Persistence;          // CustomerCoreDbContext
+using SmartBank.Infrastructure.Persistence;         // CustomerCoreDbContext
 using SmartBank.Application.Interfaces;             // IService interfaces
 using SmartBank.Application.Services;               // Service implementations
 using SmartBank.Application.MappingProfiles;        // AutoMapper profiles root (any)
@@ -25,6 +25,7 @@ builder.Services
     .AddFluentValidationClientsideAdapters();
 // Validators klasörünü tara (Application assembly)
 builder.Services.AddValidatorsFromAssembly(typeof(ClearingProfile).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidator).Assembly);
 
 // ---------------- DI: Application Services ----------------
 // Core

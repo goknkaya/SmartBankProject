@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using SmartBank.Application.DTOs.Clearing;
 using SmartBank.Application.Interfaces;
@@ -178,7 +179,30 @@ namespace SmartBank.Application.Services
             }
 
             // eşleştirme güncellemelerini yaz
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 ||  sql.Number == 2627)) // 2601 unique index ihlali, 2627 unique constraint ihlali 
+            {
+                // Unique index hatası: aynı batch + aynı TransactionId çakışması
+                // => İlgili satırları X (conflict) olarak işaretle
+                var conflicts = await _db.ClearingRecords
+                    .Where(r => r.BatchId == batchId)
+                    .GroupBy(r => r.TransactionId)
+                    .Where(g => g.Count() > 1 && g.Key != null)
+                    .SelectMany(g => g)
+                    .ToListAsync();
+
+                foreach (var c in conflicts)
+                {
+                    c.MatchStatus = "X";
+                    c.TransactionId = null;
+                    c.ErrorMessage = "Aynı Transaction bu batch içinde birden fazla satıra bağlanmaya çalıştı.";
+                }
+
+                await _db.SaveChangesAsync();
+            }
 
             // batch sayıları güncelle
             var batch = await _db.ClearingBatches.FirstOrDefaultAsync(b => b.Id == batchId)
@@ -364,19 +388,40 @@ namespace SmartBank.Application.Services
                 {
                     r.MatchStatus = "N";
                     r.ErrorMessage = "Eşleşen işlem bulunamadı.";
+                    r.TransactionId = null;
+                    r.CardId = null;
+                    return;
                 }
-                else
+
+                // --- CONFLICT ÖN KONTROL (aynı batch'te aynı TransactionId zaten bağlanmış mı?)
+                var alreadyUsed = await _db.ClearingRecords
+                    .AsNoTracking()
+                    .AnyAsync(x => x.BatchId == r.BatchId &&
+                                    x.TransactionId == match.Id &&
+                                    x.Id != r.Id);
+
+                if (alreadyUsed)
                 {
-                    r.MatchStatus = "M";
-                    r.TransactionId = match.Id;
-                    r.CardId = match.CardId;
-                    r.ErrorMessage = null;
+                    // "X" -> conflict 
+                    r.MatchStatus = "X";
+                    r.ErrorMessage = "Bu Transaction aynı batch içinde baka satıra zaten bağlanmış.";
+                    r.TransactionId = null;
+                    r.CardId = null;
+                    return;
                 }
+
+                // güvenle bağla
+                r.MatchStatus = "M";
+                r.TransactionId = match.Id;
+                r.CardId = match.CardId;
+                r.ErrorMessage = null;
             }
             catch (Exception ex)
             {
                 r.MatchStatus = "E";
                 r.ErrorMessage = ex.Message;
+                r.TransactionId = null;
+                r.CardId = null;
             }
         }
 
