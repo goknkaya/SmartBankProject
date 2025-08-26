@@ -25,14 +25,12 @@ namespace SmartBank.Domain.Entities
         [Required]
         [MaxLength(1)]
         public string Status { get; set; } // S-uccess, F-ailed, R-eversed
-
         public DateTime TransactionDate { get; set; }
 
         [MaxLength(100)]
         public string Description { get; set; }
-
         public bool IsReversed { get; set; }
-
         public virtual Card Card { get; set; }
+        public string? AcquirerRef { get; set; }  // aynı ExternalId
     }
 }

@@ -1,5 +1,4 @@
-﻿// SmartBank.Domain/Entities/ClearingRecord.cs
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartBank.Domain.Entities

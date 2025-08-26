@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SmartBank.Domain.Entities;
+using SmartBank.Domain.Entities.Switching;
 
 namespace SmartBank.Infrastructure.Persistence
 {
@@ -12,29 +8,56 @@ namespace SmartBank.Infrastructure.Persistence
     {
         public CustomerCoreDbContext(DbContextOptions<CustomerCoreDbContext> options) : base(options) { }
 
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<Card> Cards { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
-        public DbSet<Reversal> Reversals { get; set; }
-        public DbSet<ClearingBatch> ClearingBatches { get; set; } = null;
-        public DbSet<ClearingRecord> ClearingRecords { get; set; } = null;
+        // === Core tablolar ===
+        public DbSet<Customer> Customers => Set<Customer>();
+        public DbSet<Card> Cards => Set<Card>();
+        public DbSet<Transaction> Transactions => Set<Transaction>();
+        public DbSet<Reversal> Reversals => Set<Reversal>();
+
+        // === Clearing tabloları ===
+        public DbSet<ClearingBatch> ClearingBatches => Set<ClearingBatch>();
+        public DbSet<ClearingRecord> ClearingRecords => Set<ClearingRecord>();
+
+        // === Switch tabloları ===
+        public DbSet<SwitchMessage> SwitchMessages => Set<SwitchMessage>();
+        public DbSet<SwitchLog> SwitchLogs => Set<SwitchLog>();
+        public DbSet<CardBin> CardBins => Set<CardBin>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // =======================
+            // Transaction
+            // =======================
+            modelBuilder.Entity<Transaction>(t =>
+            {
+                t.Property(x => x.AcquirerRef).HasMaxLength(64);
+                t.HasIndex(x => x.AcquirerRef);
+
+                // Kart silinince transaction'lar silinmesin
+                t.HasOne(x => x.Card)
+                 .WithMany()
+                 .HasForeignKey(x => x.CardId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // =======================
             // ClearingBatch
+            // =======================
             modelBuilder.Entity<ClearingBatch>(b =>
             {
-                b.HasIndex(x => x.FileHash).IsUnique();   // aynı dosyayı iki kez işleme
-                b.Property(x => x.Direction).HasMaxLength(3).IsRequired();
-                b.Property(x => x.Status).HasMaxLength(1).IsRequired();
+                b.HasIndex(x => x.FileHash).IsUnique();          // aynı dosya iki kez işlenmesin
+                b.Property(x => x.Direction).HasMaxLength(3).IsRequired(); // IN/OUT
+                b.Property(x => x.Status).HasMaxLength(1).IsRequired();    // N/P/M/E
                 b.Property(x => x.FileName).HasMaxLength(255);
                 b.Property(x => x.FileHash).HasMaxLength(64);
                 b.Property(x => x.Notes).HasMaxLength(250);
             });
 
+            // =======================
             // ClearingRecord
+            // =======================
             modelBuilder.Entity<ClearingRecord>(r =>
             {
                 r.HasOne(x => x.Batch)
@@ -54,10 +77,80 @@ namespace SmartBank.Infrastructure.Persistence
 
                 r.HasIndex(x => new { x.BatchId, x.MatchStatus });
                 r.Property(x => x.Currency).HasMaxLength(3).IsRequired();
-                r.Property(x => x.MatchStatus).HasMaxLength(1).IsRequired();
+                r.Property(x => x.MatchStatus).HasMaxLength(1).IsRequired(); // P/M/N/E
                 r.Property(x => x.MerchantName).HasMaxLength(100);
                 r.Property(x => x.CardLast4).HasMaxLength(4);
                 r.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+
+                // aynı batch içinde aynı Transaction sadece 1 kere olsun
+                r.HasIndex(x => new { x.BatchId, x.TransactionId })
+                 .IsUnique()
+                 .HasFilter("[TransactionId] IS NOT NULL");
+            });
+
+            // =======================
+            // SwitchMessage
+            // =======================
+            modelBuilder.Entity<SwitchMessage>(e =>
+            {
+                e.Property(x => x.PANMasked).HasMaxLength(19);
+                e.Property(x => x.Bin).HasMaxLength(6);
+                e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+                e.Property(x => x.Acquirer).HasMaxLength(50);
+                e.Property(x => x.Issuer).HasMaxLength(50);
+                e.Property(x => x.Status).HasMaxLength(20);
+                e.Property(x => x.ExternalId).HasMaxLength(64);
+
+                // Amount -> decimal(18,2)
+                e.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+
+                // İndeksler
+                e.HasIndex(x => x.Status);
+                e.HasIndex(x => x.CreatedAt);
+                e.HasIndex(x => new { x.Issuer, x.Status });
+                e.HasIndex(x => new { x.Acquirer, x.ExternalId })
+                 .IsUnique()
+                 .HasFilter("[ExternalId] IS NOT NULL");
+
+                // FK'ler (opsiyonel ama iyi)
+                e.HasOne(x => x.Card)
+                 .WithMany()
+                 .HasForeignKey(x => x.CardId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                // Transaction'a da FK vermek istersen (nav yoksa da olur)
+                e.HasOne<Transaction>()
+                 .WithMany()
+                 .HasForeignKey(x => x.TransactionId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // =======================
+            // SwitchLog
+            // =======================
+            modelBuilder.Entity<SwitchLog>(e =>
+            {
+                e.HasOne(x => x.Message)
+                 .WithMany()
+                 .HasForeignKey(x => x.MessageId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.Property(x => x.Stage).HasMaxLength(20); // Received/Routed/Persisted/Responded
+                e.Property(x => x.Level).HasMaxLength(10); // INFO/WARN/ERROR
+                e.Property(x => x.Note).HasMaxLength(200);
+
+                e.HasIndex(x => x.MessageId);
+                e.HasIndex(x => x.CreatedAt);
+            });
+
+            // =======================
+            // CardBin
+            // =======================
+            modelBuilder.Entity<CardBin>(e =>
+            {
+                e.Property(x => x.Bin).HasMaxLength(6).IsRequired();
+                e.Property(x => x.Issuer).HasMaxLength(50).IsRequired();
+                e.HasIndex(x => x.Bin).IsUnique(); // BIN benzersiz
             });
         }
     }

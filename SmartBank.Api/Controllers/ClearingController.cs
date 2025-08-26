@@ -1,5 +1,4 @@
-﻿// SmartBank.Api/Controllers/ClearingController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SmartBank.Application.DTOs.Clearing;
 using SmartBank.Application.Interfaces;
 

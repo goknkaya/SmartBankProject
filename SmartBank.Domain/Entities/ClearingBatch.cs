@@ -1,5 +1,4 @@
-﻿// SmartBank.Domain/Entities/ClearingBatch.cs
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SmartBank.Domain.Entities
 {
