@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartBank.Domain.Entities;
+using SmartBank.Domain.Entities.Chargeback;
 using SmartBank.Domain.Entities.Switching;
 
 namespace SmartBank.Infrastructure.Persistence
@@ -22,6 +23,10 @@ namespace SmartBank.Infrastructure.Persistence
         public DbSet<SwitchMessage> SwitchMessages => Set<SwitchMessage>();
         public DbSet<SwitchLog> SwitchLogs => Set<SwitchLog>();
         public DbSet<CardBin> CardBins => Set<CardBin>();
+
+        // === Chargeback tabloları ===
+        public DbSet<ChargebackCase> ChargebackCases => Set<ChargebackCase>();
+        public DbSet<ChargebackEvent> ChargebackEvents => Set<ChargebackEvent>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -151,6 +156,44 @@ namespace SmartBank.Infrastructure.Persistence
                 e.Property(x => x.Bin).HasMaxLength(6).IsRequired();
                 e.Property(x => x.Issuer).HasMaxLength(50).IsRequired();
                 e.HasIndex(x => x.Bin).IsUnique(); // BIN benzersiz
+            });
+
+            // =======================
+            // ChargebackCase
+            // =======================
+            modelBuilder.Entity<ChargebackCase>(e =>
+            {
+                e.Property(x => x.ReasonCode).HasMaxLength(20).IsRequired();
+                e.Property(x => x.Status).HasMaxLength(15).IsRequired();
+                e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+                e.Property(x => x.MerchantName).HasMaxLength(100);
+
+                e.Property(x => x.TransactionAmount).HasColumnType("decimal(18,2)");
+                e.Property(x => x.DisputedAmount).HasColumnType("decimal(18,2)");
+
+                e.HasIndex(x => x.Status);
+                e.HasIndex(x => x.OpenedAt);
+
+                // FK
+                e.HasOne(x => x.Transaction)
+                 .WithMany()
+                 .HasForeignKey(x => x.TransactionId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // =======================
+            // ChargebackEvent
+            // =======================
+            modelBuilder.Entity<ChargebackEvent>(e =>
+            {
+                e.Property(x => x.Type).HasMaxLength(20).IsRequired();
+                e.Property(x => x.Note).HasMaxLength(200);
+
+                e.HasIndex(x => x.CaseId);
+                e.HasOne(x => x.Case)
+                 .WithMany(c => c.Events)
+                 .HasForeignKey(x => x.CaseId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

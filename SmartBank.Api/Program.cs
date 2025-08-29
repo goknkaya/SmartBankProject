@@ -33,6 +33,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IReversalService, ReversalService>();
+builder.Services.AddScoped<IChargebackService, ChargebackService>();
 
 // Clearing
 builder.Services.AddScoped<IClearingService, ClearingService>();
