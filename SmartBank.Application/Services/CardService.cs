@@ -107,8 +107,8 @@ namespace SmartBank.Application.Services
             // 10) Map + Ekle
             var card = _mapper.Map<Card>(dto);
             card.IsActive = true;
-            card.CreatedAt = DateTime.UtcNow;
-            card.UpdatedAt = DateTime.UtcNow;
+            card.CreatedAt = DateTime.Now;
+            card.UpdatedAt = DateTime.Now;
 
             await _dbContext.Cards.AddAsync(card);
             await _dbContext.SaveChangesAsync();
@@ -193,7 +193,7 @@ namespace SmartBank.Application.Services
             if (dto.LastUsedAt.HasValue) card.LastUsedAt = dto.LastUsedAt.Value;
             if (dto.ParentCardId.HasValue) card.ParentCardId = dto.ParentCardId.Value;
 
-            card.UpdatedAt = DateTime.UtcNow;
+            card.UpdatedAt = DateTime.Now;
 
             _dbContext.Cards.Update(card);
             await _dbContext.SaveChangesAsync();
@@ -212,7 +212,7 @@ namespace SmartBank.Application.Services
                 throw new InvalidOperationException("Bloke edilmiş kartlar silinemez.");
 
             card.IsActive = false;
-            card.UpdatedAt = DateTime.UtcNow;
+            card.UpdatedAt = DateTime.Now;
 
             _dbContext.Cards.Update(card);
             await _dbContext.SaveChangesAsync();

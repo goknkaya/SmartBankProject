@@ -25,7 +25,7 @@ namespace SmartBank.Domain.Entities.Chargeback
         [MaxLength(15)] public string Status { get; set; } = "Open"; // Open/Won/Lost/Cancelled
 
         // Zamanlar
-        public DateTime OpenedAt { get; set; } = DateTime.UtcNow;
+        public DateTime OpenedAt { get; set; } = DateTime.Now;
         public DateTime? ClosedAt { get; set; }
 
         // Opsiyonel: son tarih (n+45 gün vb.)

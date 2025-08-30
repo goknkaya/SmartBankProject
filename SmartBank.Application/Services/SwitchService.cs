@@ -26,7 +26,7 @@ namespace SmartBank.Application.Services
             var cleanPan = (dto.PAN ?? "").Replace(" ", "");
             var bin = cleanPan.Length >= 6 ? cleanPan[..6] : cleanPan;
             var cur = (dto.Currency ?? "TRY").ToUpperInvariant();
-            var txTime = (dto.TxnTime ?? dto.TxnTime ?? DateTime.UtcNow).ToUniversalTime();
+            var txTime = (dto.TxnTime ?? dto.TxnTime ?? DateTime.Now).ToUniversalTime();
 
             // -- 1) Issuer
             var issuer = await _dbContext.CardBins
@@ -56,7 +56,7 @@ namespace SmartBank.Application.Services
                     Acquirer = dto.Acquirer,
                     Issuer = issuer,
                     Status = "Declined",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     TransactionId = null
                 };
             }
@@ -71,7 +71,7 @@ namespace SmartBank.Application.Services
                 Acquirer = dto.Acquirer,
                 Issuer = issuer,
                 Status = "Pending",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 ExternalId = externalId
             };
 
@@ -92,7 +92,7 @@ namespace SmartBank.Application.Services
                     Acquirer = msg.Acquirer,
                     Issuer = msg.Issuer,
                     Status = "Declined",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     TransactionId = null
                 };
             }
@@ -197,7 +197,7 @@ namespace SmartBank.Application.Services
                 Note = note,
                 PayloadIn = payloadIn,
                 PayloadOut = payloadOut,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
             await _dbContext.SaveChangesAsync();
         }

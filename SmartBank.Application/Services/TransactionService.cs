@@ -40,7 +40,7 @@ namespace SmartBank.Application.Services
                 throw new InvalidOperationException("Bu kart blokeli olduğundan işlem yapılamaz.");
 
             // 2) Günlük harcama (bugün) — sadece başarılı ve reverse edilmemiş işlemler
-            var todayUtc = DateTime.UtcNow.Date;
+            var todayUtc = DateTime.Now.Date;
             var spentToday = await _dbContext.Transactions
                 .Where(t => t.CardId == dto.CardId
                             && t.Status == "S"
@@ -77,13 +77,13 @@ namespace SmartBank.Application.Services
                     Amount = dto.Amount,
                     Currency = dto.Currency,
                     Description = dto.Description,
-                    TransactionDate = dto.TransactionDate == default ? DateTime.UtcNow : dto.TransactionDate,
+                    TransactionDate = dto.TransactionDate == default ? DateTime.Now : dto.TransactionDate,
                     Status = "S",
                     IsReversed = false
                 };
 
                 card.CardLimit -= dto.Amount;
-                card.UpdatedAt = DateTime.UtcNow;
+                card.UpdatedAt = DateTime.Now;
 
                 _dbContext.Transactions.Add(transaction);
                 _dbContext.Cards.Update(card);

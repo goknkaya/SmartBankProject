@@ -19,6 +19,6 @@ namespace SmartBank.Domain.Entities.Switching
 
         public string? PayloadIn { get; set; }   // JSON request
         public string? PayloadOut { get; set; }  // JSON response/decision
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

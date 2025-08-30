@@ -55,8 +55,8 @@ namespace SmartBank.Application.Services
 
             var customer = _mapper.Map<Customer>(dto);
             customer.IsActive = true;
-            customer.CreatedAt = DateTime.UtcNow;
-            customer.UpdatedAt = DateTime.UtcNow;
+            customer.CreatedAt = DateTime.Now;
+            customer.UpdatedAt = DateTime.Now;
 
             await _dbContext.Customers.AddAsync(customer);
             await _dbContext.SaveChangesAsync();
@@ -95,7 +95,7 @@ namespace SmartBank.Application.Services
             }
 
             _mapper.Map(dto, customer);
-            customer.UpdatedAt = DateTime.UtcNow;
+            customer.UpdatedAt = DateTime.Now;
 
             await _dbContext.SaveChangesAsync();
 
@@ -111,7 +111,7 @@ namespace SmartBank.Application.Services
                 throw new InvalidOperationException("Silinmek istenen müşteri bulunamadı veya zaten pasif.");
 
             customer.IsActive = false;
-            customer.UpdatedAt = DateTime.UtcNow;
+            customer.UpdatedAt = DateTime.Now;
 
             await _dbContext.SaveChangesAsync();
 

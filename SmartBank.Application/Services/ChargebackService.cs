@@ -18,6 +18,28 @@ namespace SmartBank.Application.Services
             _mapper = mapper;
         }
 
+        private string NormalizeDecision(string input)
+        {
+            var key = (input ?? "").Trim().ToUpperInvariant();
+
+            return key switch
+            {
+                "WON" => "Won",
+                "CUSTOMER_WINS" => "Won",
+                "MÜŞTERİ_KAZANDI" => "Won",
+
+                "LOST" => "Lost",
+                "MERCHANT_WINS" => "Lost",
+                "İŞYERİ_KAZANDI" => "Lost",
+
+                "CANCELLED" or "CANCELED" => "Cancelled",
+
+                _ => throw new InvalidOperationException(
+                        "Geçersiz decision. Kullanılabilecek değerler: Won, Lost, Cancelled " +
+                        "(veya CUSTOMER_WINS / MERCHANT_WINS).")
+            };
+        }
+
         public async Task<SelectChargebackCaseDto> OpenAsync(CreateChargebackDto dto)
         {
             var txn = await _dbContext.Transactions
@@ -44,7 +66,7 @@ namespace SmartBank.Application.Services
                 ReplyBy = dto.ReplyBy,
                 Note = dto.Note,
                 Status = "Open",
-                OpenedAt = DateTime.UtcNow
+                OpenedAt = DateTime.Now
             };
 
             _dbContext.Add(cb);
@@ -61,7 +83,12 @@ namespace SmartBank.Application.Services
             var q = _dbContext.Set<ChargebackCase>().AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(status))
-                q = q.Where(c => c.Status == status);
+            {
+                var s = status.Trim().ToUpperInvariant();
+                // c.Status NULL olabilir; güvenli karşılaştır
+                q = q.Where(c => c.Status != null && c.Status.ToUpper() == s);
+                // NOT: İstersen "OPEN" yerine enum da kullanabilirsin (Open/Won/Lost/Cancelled)
+            }
 
             if (txnId.HasValue)
                 q = q.Where(c => c.TransactionId == txnId.Value);
@@ -69,6 +96,15 @@ namespace SmartBank.Application.Services
             var list = await q.OrderByDescending(c => c.Id).ToListAsync();
 
             return _mapper.Map<List<SelectChargebackCaseDto>>(list);
+        }
+
+        public async Task<SelectChargebackCaseDto?> GetCaseAsync(int caseId)
+        {
+            var cb = await _dbContext.Set<ChargebackCase>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == caseId);
+
+            return cb == null ? null : _mapper.Map<SelectChargebackCaseDto>(cb);
         }
 
         public async Task<List<SelectChargebackEventDto>> GetEventsAsync(int caseId)
@@ -104,22 +140,19 @@ namespace SmartBank.Application.Services
         {
             var cb = await _dbContext.Set<ChargebackCase>().FirstOrDefaultAsync(c => c.Id == caseId)
                 ?? throw new InvalidOperationException("Case bulunamadı.");
-            if (cb.Status != "Open")
-                throw new InvalidOperationException("Zaten kapalı bir case.");
 
-            var decision = dto.Decision switch
-            {
-                "Won" => "Won",
-                "Lost" => "Lost",
-                "Cancelled" => "Cancelled",
-                _ => throw new InvalidOperationException("Geçersiz karar.")
-            };
+            if (!string.Equals(cb.Status, "Open", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Case zaten kapalı. Sadece 'Open' durumundaki case'ler sonuçlandırılabilir.");
+
+            // 👇 Artık burada direkt çağırıyoruz
+            var decision = NormalizeDecision(dto.Decision);
 
             cb.Status = decision;
-            cb.ClosedAt = DateTime.UtcNow;
+            cb.ClosedAt = DateTime.Now;
 
             _dbContext.Add(new ChargebackEvent { CaseId = cb.Id, Type = decision, Note = dto.Note });
             await _dbContext.SaveChangesAsync();
+
             return _mapper.Map<SelectChargebackCaseDto>(cb);
         }
     }

@@ -24,7 +24,7 @@ namespace SmartBank.Application.DTOs.Validators.Clearing
                 .GreaterThanOrEqualTo(0);
 
             RuleFor(x => x.SettlementDate)
-                .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("SettlementDate ileri tarih olamaz.");
+                .LessThanOrEqualTo(DateTime.Now).WithMessage("SettlementDate ileri tarih olamaz.");
         }
     }
 

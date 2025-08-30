@@ -17,6 +17,6 @@ namespace SmartBank.Domain.Entities.Chargeback
         [MaxLength(20)] public string Type { get; set; } = "Opened"; // Opened, EvidenceAdded, Represented, Won, Lost, Cancelled
         [MaxLength(200)] public string? Note { get; set; }
         public string? EvidenceUrl { get; set; } // dosya yolu/link
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

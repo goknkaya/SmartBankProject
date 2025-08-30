@@ -11,7 +11,7 @@ namespace SmartBank.Application.DTOs.Validators.Clearing
         {
             RuleFor(x => x.SettlementDate)
                 .NotEmpty().WithMessage("SettlementDate zorunludur.")
-                .LessThanOrEqualTo(DateTime.UtcNow.Date.AddDays(1))
+                .LessThanOrEqualTo(DateTime.Now.Date.AddDays(1))
                 .WithMessage("SettlementDate gelecekte olamaz.");
 
             RuleFor(x => x.Direction)

@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
                                            SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(issuer, audience, claims,
-                                         expires: DateTime.UtcNow.AddMinutes(expires),
+                                         expires: DateTime.Now.AddMinutes(expires),
                                          signingCredentials: creds);
 
         return Ok(new JwtSecurityTokenHandler().WriteToken(token));

@@ -53,7 +53,7 @@ namespace SmartBank.Application.Services
             if (card != null && card.IsActive && !card.IsBlocked)
             {
                 card.CardLimit += dto.ReversedAmount;   // iade
-                card.UpdatedAt = DateTime.UtcNow;
+                card.UpdatedAt = DateTime.Now;
                 _dbContext.Cards.Update(card);
                 isCardLimitRestored = true;
             }
@@ -71,7 +71,7 @@ namespace SmartBank.Application.Services
                 ReversedAmount = dto.ReversedAmount,
                 Status = "S",                              // Successful
                 PerformedBy = dto.PerformedBy,
-                ReversalDate = DateTime.UtcNow,
+                ReversalDate = DateTime.Now,
                 ReversalSource = dto.ReversalSource,
                 IsCardLimitRestored = isCardLimitRestored
             };
@@ -139,7 +139,7 @@ namespace SmartBank.Application.Services
                     throw new InvalidOperationException("Kart limitinden düşülecek tutar yetersiz.");
 
                 card.CardLimit -= reversal.ReversedAmount;
-                card.UpdatedAt = DateTime.UtcNow;
+                card.UpdatedAt = DateTime.Now;
                 _dbContext.Cards.Update(card);
 
                 reversal.IsCardLimitRestored = false;
@@ -154,7 +154,7 @@ namespace SmartBank.Application.Services
             reversal.Status = "V";
             reversal.VoidedBy = performedBy;
             reversal.VoidReason = reason;
-            reversal.VoidedAt = DateTime.UtcNow;
+            reversal.VoidedAt = DateTime.Now;
 
             _dbContext.Reversals.Update(reversal);
             await _dbContext.SaveChangesAsync();

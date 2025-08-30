@@ -40,6 +40,6 @@ namespace SmartBank.Domain.Entities
         [MaxLength(300)]
         public string? ErrorMessage { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

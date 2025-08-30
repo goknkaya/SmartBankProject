@@ -47,7 +47,7 @@ namespace SmartBank.Application.Services
                 FileHash = hash,
                 SettlementDate = req.SettlementDate.Date,
                 Status = "N",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 Notes = req.Notes
             };
 
@@ -73,7 +73,7 @@ namespace SmartBank.Application.Services
             batch.FailCount = batch.TotalCount - matched; // N + E
 
             batch.Status = "P";
-            batch.ProcessedAt = DateTime.UtcNow;
+            batch.ProcessedAt = DateTime.Now;
 
             await _db.SaveChangesAsync();
             await trx.CommitAsync();
@@ -118,8 +118,8 @@ namespace SmartBank.Application.Services
                 SuccessCount = txs.Count,
                 FailCount = 0,
                 Status = "P",
-                CreatedAt = DateTime.UtcNow,
-                ProcessedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                ProcessedAt = DateTime.Now
             };
 
             _db.ClearingBatches.Add(batch);
@@ -263,7 +263,7 @@ namespace SmartBank.Application.Services
             LineNumber = lineNo,
             MatchStatus = "E",
             ErrorMessage = msg,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         // "78"→"0078", "123"→"0123", "4"→"0004", "0004"→"0004"; sadece rakamları tut
@@ -341,7 +341,7 @@ namespace SmartBank.Application.Services
                 TransactionDate = txDate,
                 MerchantName = merchant,
                 MatchStatus = "P",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
         }
 

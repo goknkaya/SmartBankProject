@@ -24,7 +24,7 @@ namespace SmartBank.Domain.Entities
         public int SuccessCount { get; set; }
         public int FailCount { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? ProcessedAt { get; set; }
 
         [MaxLength(250)]

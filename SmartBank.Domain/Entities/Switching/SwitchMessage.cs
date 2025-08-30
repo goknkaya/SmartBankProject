@@ -24,7 +24,7 @@ namespace SmartBank.Domain.Entities.Switching
 
         [MaxLength(20)]
         public string Status { get; set; } = "Pending"; // Pending/Approved/Declined
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public int? TransactionId { get; set; } // opsiyonel: Approved olursa dolduruyoruz
 
         [Required]

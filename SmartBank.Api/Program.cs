@@ -107,7 +107,7 @@ app.UseAuthorization();
 
 // ---- Anonim yardımcı uçlar
 app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous();
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow })).AllowAnonymous();
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.Now })).AllowAnonymous();
 
 // ---- TÜM CONTROLLER’LAR JWT İSTER
 // Login gibi istisnalar için aksiyona [AllowAnonymous] ekle (örn. AuthController.Login).

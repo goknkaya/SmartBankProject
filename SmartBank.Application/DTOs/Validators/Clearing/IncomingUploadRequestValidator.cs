@@ -20,7 +20,7 @@ namespace SmartBank.Application.DTOs.Validators.Clearing
                 .Equal("IN").WithMessage("Direction yalnızca 'IN' olabilir.");
 
             RuleFor(x => x.SettlementDate)
-                .LessThanOrEqualTo(DateTime.UtcNow.Date.AddDays(1));
+                .LessThanOrEqualTo(DateTime.Now.Date.AddDays(1));
 
             RuleFor(x => x.Notes)
                 .MaximumLength(500).When(x => !string.IsNullOrWhiteSpace(x.Notes));
