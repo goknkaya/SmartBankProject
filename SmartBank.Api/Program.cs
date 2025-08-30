@@ -1,86 +1,116 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Text;
+using System.Text.Json.Serialization;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
-using SmartBank.Infrastructure.Persistence;         // CustomerCoreDbContext
-using SmartBank.Application.Interfaces;             // IService interfaces
-using SmartBank.Application.Services;               // Service implementations
-using SmartBank.Application.MappingProfiles;        // AutoMapper profiles root (any)
+// SmartBank
+using SmartBank.Infrastructure.Persistence;
+using SmartBank.Application.Interfaces;
+using SmartBank.Application.Services;
+using SmartBank.Application.MappingProfiles;
+using SmartBank.Application.Validators.Switch;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------- DbContext ----------------
+// ---- DB
 builder.Services.AddDbContext<CustomerCoreDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ---------------- AutoMapper ----------------
-// Assembly scan: MappingProfiles altındaki tüm Profile’lar otomatik yüklenecek
+// ---- AutoMapper & FluentValidation
 builder.Services.AddAutoMapper(typeof(ClearingProfile).Assembly);
-
-// ---------------- FluentValidation (opsiyonel ama önerilir) ----------------
-builder.Services
-    .AddFluentValidationAutoValidation()
-    .AddFluentValidationClientsideAdapters();
-// Validators klasörünü tara (Application assembly)
+builder.Services.AddFluentValidationAutoValidation()
+                .AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssembly(typeof(ClearingProfile).Assembly);
 builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidator).Assembly);
 
-// ---------------- DI: Application Services ----------------
-// Core
+// ---- Services (DI)
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IReversalService, ReversalService>();
 builder.Services.AddScoped<IChargebackService, ChargebackService>();
-
-// Clearing
 builder.Services.AddScoped<IClearingService, ClearingService>();
-
-// Switching
 builder.Services.AddScoped<ISwitchService, SwitchService>();
 
-// ---------------- Controllers + JSON ----------------
-builder.Services.AddControllers()
-    .AddJsonOptions(o =>
+// ---- Controllers + JSON
+builder.Services.AddControllers().AddJsonOptions(o =>
+{
+    o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+});
+
+// ---- JWT
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+var jwtKey = builder.Configuration["Jwt:Key"]; // appsettings veya user-secrets
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
     {
-        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey ?? string.Empty)),
+            ClockSkew = TimeSpan.Zero
+        };
     });
 
-// ---------------- Swagger ----------------
+builder.Services.AddAuthorization();
+
+// ---- Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "SmartBank API", Version = "v1" });
-    // File upload parametreleri için
-    c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
-    // Tip adı çakışmalarını engelle
     c.CustomSchemaIds(t => t.FullName);
-    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+    c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
+
+    // JWT butonu
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Bearer {token}"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } }, Array.Empty<string>() }
+    });
 });
 
 var app = builder.Build();
 
-// ---------------- Pipeline ----------------
-if (app.Environment.IsDevelopment())
+// ---- Swagger JSON & UI (ANONİM)
+app.MapSwagger().AllowAnonymous(); // /swagger/v1/swagger.json
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBank API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBank API v1");
+    c.RoutePrefix = "swagger"; // https://localhost:xxxx/swagger
+});
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// ---- Anonim yardımcı uçlar
+app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous();
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow })).AllowAnonymous();
 
-// Basit sağlık kontrolü
-app.MapGet("/healthz", () => Results.Ok("ok"));
+// ---- TÜM CONTROLLER’LAR JWT İSTER
+// Login gibi istisnalar için aksiyona [AllowAnonymous] ekle (örn. AuthController.Login).
+app.MapControllers().RequireAuthorization();
 
 app.Run();
