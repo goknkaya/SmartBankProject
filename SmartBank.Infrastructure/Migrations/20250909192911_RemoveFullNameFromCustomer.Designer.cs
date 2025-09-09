@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartBank.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using SmartBank.Infrastructure.Persistence;
 namespace SmartBank.Infrastructure.Migrations
 {
     [DbContext(typeof(CustomerCoreDbContext))]
-    partial class CustomerCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250909192911_RemoveFullNameFromCustomer")]
+    partial class RemoveFullNameFromCustomer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

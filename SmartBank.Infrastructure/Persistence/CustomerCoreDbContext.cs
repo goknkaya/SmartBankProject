@@ -195,6 +195,27 @@ namespace SmartBank.Infrastructure.Persistence
                  .HasForeignKey(x => x.CaseId)
                  .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // =======================
+            // Customer
+            // =======================
+            modelBuilder.Entity<Customer>(e =>
+            {
+                e.ToTable("Customers");
+
+                e.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
+                e.Property(p => p.LastName).HasMaxLength(100).IsRequired();
+
+                e.Property(p => p.TCKN).HasMaxLength(11).IsRequired();
+                e.HasIndex(p => p.TCKN).IsUnique();
+
+                e.Property(p => p.Email).HasMaxLength(150);
+                e.Property(p => p.PhoneNumber).HasMaxLength(20);
+                e.Property(p => p.Gender).HasMaxLength(10);
+
+                e.Property(p => p.IsActive).HasDefaultValue(true);
+                e.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            });
         }
     }
 }

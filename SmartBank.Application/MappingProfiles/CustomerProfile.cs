@@ -8,12 +8,19 @@ namespace SmartBank.Application.MappingProfiles
     {
         public CustomerProfile()
         {
-            CreateMap<Customer, SelectCustomerDto>().ReverseMap();
-            CreateMap<CreateCustomerDto, Customer>()
-    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FirstName + " " + src.LastName))
-    .ReverseMap();
+            // Entity -> Select DTO
+            CreateMap<Customer, SelectCustomerDto>()
+                // BirthDate null ise MinValue geç; UI zaten boş gösterecek
+                .ForMember(d => d.BirthDate, o => o.MapFrom(s => s.BirthDate ?? DateTime.MinValue));
 
-            CreateMap<Customer, UpdateCustomerDto>().ReverseMap();
+            // Create DTO -> Entity
+            CreateMap<CreateCustomerDto, Customer>()
+                .ForMember(d => d.BirthDate,
+                    o => o.MapFrom(s => s.BirthDate == default ? (DateTime?)null : s.BirthDate));
+
+            // Update DTO -> Entity (yalnızca dolu alanları yaz)
+            CreateMap<UpdateCustomerDto, Customer>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }
