@@ -24,7 +24,7 @@ namespace SmartBank.Application.Services
             var customers = await _db.Customers
                 .AsNoTracking()
                 .Where(c => c.IsActive)
-                .OrderByDescending(c => c.Id)
+                .OrderBy(c => c.Id)
                 .ToListAsync();
 
             return _mapper.Map<List<SelectCustomerDto>>(customers);
