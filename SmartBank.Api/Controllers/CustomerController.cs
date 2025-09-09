@@ -28,24 +28,49 @@ public class CustomerController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<SelectCustomerDto>> Create([FromBody] CreateCustomerDto dto)
     {
-        var created = await _svc.CreateAsync(dto);
-        // 201 Created + Location header
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        try
+        {
+            var created = await _svc.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Aynılık (unique) ihlali vb. iş kuralı -> 409
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     // PUT /api/Customer/{id}
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerDto dto)
     {
-        await _svc.UpdateAsync(id, dto);
-        return NoContent(); // 204
+        try
+        {
+            await _svc.UpdateAsync(id, dto);
+            return NoContent(); // 204
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     // DELETE /api/Customer/{id}  (soft delete içeride)
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _svc.DeleteAsync(id);
-        return NoContent(); // 204
+        try
+        {
+            await _svc.DeleteAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }
