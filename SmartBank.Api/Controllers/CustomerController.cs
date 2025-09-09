@@ -1,62 +1,51 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SmartBank.Application.Interfaces;
 using SmartBank.Application.DTOs.Customer;
+using SmartBank.Application.Interfaces;
 
-namespace SmartBank.Api.Controllers
+namespace SmartBank.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class CustomerController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class CustomerController : ControllerBase
+    private readonly ICustomerService _svc;
+    public CustomerController(ICustomerService svc) => _svc = svc;
+
+    // GET /api/Customer
+    [HttpGet]
+    public async Task<ActionResult<List<SelectCustomerDto>>> GetAll()
+        => Ok(await _svc.GetAllAsync());
+
+    // GET /api/Customer/{id}
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<SelectCustomerDto>> GetById(int id)
     {
-        private readonly ICustomerService _customerService;
+        var dto = await _svc.GetByIdAsync(id);
+        return dto is null ? NotFound() : Ok(dto);
+    }
 
-        public CustomerController(ICustomerService customerService)
-        {
-            _customerService = customerService;
-        }
+    // POST /api/Customer
+    [HttpPost]
+    public async Task<ActionResult<SelectCustomerDto>> Create([FromBody] CreateCustomerDto dto)
+    {
+        var created = await _svc.CreateAsync(dto);
+        // 201 Created + Location header
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllCustomers()
-        {
-            var customers = await _customerService.GetAllCustomersAsync();
-            return Ok(customers);
-        }
+    // PUT /api/Customer/{id}
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerDto dto)
+    {
+        await _svc.UpdateAsync(id, dto);
+        return NoContent(); // 204
+    }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetCustomerById(int id)
-        {
-            var customer = await _customerService.GetCustomerByIdAsync(id);
-            return Ok(customer); // service bulunamazsa zaten exception atıyor
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerDto dto)
-        {
-            var ok = await _customerService.CreateCustomerAsync(dto);
-            if (!ok) return BadRequest("Müşteri oluşturulamadı.");
-
-            // Varsa döneceğin id'yi service'ten alıp CreatedAtAction ile dönmek daha iyi olur
-            // şimdilik 200 dönelim:
-            return Ok("Müşteri başarıyla oluşturuldu.");
-        }
-
-        // Route id ile, body'deki Id'yi eşitle
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerDto dto)
-        {
-            if (dto.Id != 0 && dto.Id != id)
-                return BadRequest("Body'deki Id ile route Id aynı olmalı.");
-
-            dto.Id = id;
-            var ok = await _customerService.UpdateCustomerAsync(dto);
-            return ok ? Ok("Müşteri başarıyla güncellendi.") : BadRequest("Müşteri güncellenemedi.");
-        }
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteCustomer(int id)
-        {
-            var ok = await _customerService.DeleteCustomerAsync(id);
-            return ok ? Ok("Müşteri başarıyla silindi.") : BadRequest("Müşteri silinemedi.");
-        }
+    // DELETE /api/Customer/{id}  (soft delete içeride)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _svc.DeleteAsync(id);
+        return NoContent(); // 204
     }
 }

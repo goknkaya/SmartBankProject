@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using SmartBank.Application.DTOs.Card;
 using SmartBank.Application.DTOs.Customer;
 using SmartBank.Application.Interfaces;
 using SmartBank.Domain.Entities;
@@ -10,47 +9,50 @@ namespace SmartBank.Application.Services
 {
     public class CustomerService : ICustomerService
     {
-        private readonly CustomerCoreDbContext _dbContext;
+        private readonly CustomerCoreDbContext _db;
         private readonly IMapper _mapper;
 
-        public CustomerService(CustomerCoreDbContext dbContext, IMapper mapper)
+        public CustomerService(CustomerCoreDbContext db, IMapper mapper)
         {
-            _dbContext = dbContext;
+            _db = db;
             _mapper = mapper;
         }
 
-        // Tum musteriler gelir
-        public async Task<List<SelectCustomerDto>> GetAllCustomersAsync()
+        // GET list
+        public async Task<List<SelectCustomerDto>> GetAllAsync()
         {
-            var customers = await _dbContext.Customers
+            var customers = await _db.Customers
+                .AsNoTracking()
                 .Where(c => c.IsActive)
+                .OrderByDescending(c => c.Id)
                 .ToListAsync();
 
             return _mapper.Map<List<SelectCustomerDto>>(customers);
         }
 
-        // ID ' ye gore musteriler gelir
-        public async Task<SelectCustomerDto?> GetCustomerByIdAsync(int id)
+        // GET by id
+        public async Task<SelectCustomerDto?> GetByIdAsync(int id)
         {
-            var customer = await _dbContext.Customers
+            var customer = await _db.Customers
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
 
-            if (customer == null)
-                throw new KeyNotFoundException("Müşteri bulunamadı.");
-
-            return _mapper.Map<SelectCustomerDto>(customer);
+            return customer is null ? null : _mapper.Map<SelectCustomerDto>(customer);
         }
 
-        // Yeni musteri ekle
-        public async Task<bool> CreateCustomerAsync(CreateCustomerDto dto)
+        // POST -> created dto
+        public async Task<SelectCustomerDto> CreateAsync(CreateCustomerDto dto)
         {
-            if (await _dbContext.Customers.AnyAsync(c => c.TCKN == dto.TCKN && c.IsActive))
+            // Uniqueness kontrolleri
+            if (await _db.Customers.AnyAsync(c => c.TCKN == dto.TCKN && c.IsActive))
                 throw new InvalidOperationException("Bu TCKN ile zaten kayıtlı bir müşteri var.");
 
-            if (await _dbContext.Customers.AnyAsync(c => c.Email == dto.Email && c.IsActive))
+            if (!string.IsNullOrWhiteSpace(dto.Email) &&
+                await _db.Customers.AnyAsync(c => c.Email == dto.Email && c.IsActive))
                 throw new InvalidOperationException("Bu e-posta adresi ile zaten kayıtlı bir müşteri var.");
 
-            if (await _dbContext.Customers.AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.IsActive))
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) &&
+                await _db.Customers.AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.IsActive))
                 throw new InvalidOperationException("Bu telefon numarası ile zaten kayıtlı bir müşteri var.");
 
             var customer = _mapper.Map<Customer>(dto);
@@ -58,66 +60,60 @@ namespace SmartBank.Application.Services
             customer.CreatedAt = DateTime.Now;
             customer.UpdatedAt = DateTime.Now;
 
-            await _dbContext.Customers.AddAsync(customer);
-            await _dbContext.SaveChangesAsync();
+            _db.Customers.Add(customer);
+            await _db.SaveChangesAsync();
 
-            return true;
+            return _mapper.Map<SelectCustomerDto>(customer);
         }
 
-
-        // Musteri guncelleme
-        public async Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto)
+        // PUT -> 204 NoContent (gövde yok)
+        public async Task UpdateAsync(int id, UpdateCustomerDto dto)
         {
-            var customer = await _dbContext.Customers
-                .FirstOrDefaultAsync(c => c.Id == dto.Id && c.IsActive);
-
-            if (customer == null)
-                throw new InvalidOperationException("Güncellenecek müşteri bulunamadı.");
+            var customer = await _db.Customers
+                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive)
+                ?? throw new KeyNotFoundException("Güncellenecek müşteri bulunamadı.");
 
             // Email başka biri tarafından kullanılıyor mu?
-            if (!string.IsNullOrEmpty(dto.Email))
+            if (!string.IsNullOrWhiteSpace(dto.Email))
             {
-                bool emailExists = await _dbContext.Customers
-                    .AnyAsync(c => c.Email == dto.Email && c.Id != dto.Id && c.IsActive);
-
+                bool emailExists = await _db.Customers
+                    .AnyAsync(c => c.Email == dto.Email && c.Id != id && c.IsActive);
                 if (emailExists)
                     throw new InvalidOperationException("Bu e-posta adresi başka bir müşteri tarafından kullanılıyor.");
             }
 
             // Telefon başka biri tarafından kullanılıyor mu?
-            if (!string.IsNullOrEmpty(dto.PhoneNumber))
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
             {
-                bool phoneExists = await _dbContext.Customers
-                    .AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.Id != dto.Id && c.IsActive);
-
+                bool phoneExists = await _db.Customers
+                    .AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.Id != id && c.IsActive);
                 if (phoneExists)
                     throw new InvalidOperationException("Bu telefon numarası başka bir müşteri tarafından kullanılıyor.");
             }
 
-            _mapper.Map(dto, customer);
+            // Sadece update alanlarını uygula
+            customer.Email = dto.Email ?? customer.Email;
+            customer.PhoneNumber = dto.PhoneNumber ?? customer.PhoneNumber;
+            customer.AddressLine = dto.AddressLine ?? customer.AddressLine;
+            customer.City = dto.City ?? customer.City;
+            customer.Country = dto.Country ?? customer.Country;
+
             customer.UpdatedAt = DateTime.Now;
 
-            await _dbContext.SaveChangesAsync();
-
-            return true;
+            await _db.SaveChangesAsync();
         }
 
-
-        // Musteri silme
-        public async Task<bool> DeleteCustomerAsync(int id)
+        // DELETE -> soft delete
+        public async Task DeleteAsync(int id)
         {
-            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
-            if (customer == null)
-                throw new InvalidOperationException("Silinmek istenen müşteri bulunamadı veya zaten pasif.");
+            var customer = await _db.Customers
+                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive)
+                ?? throw new KeyNotFoundException("Silinmek istenen müşteri bulunamadı veya zaten pasif.");
 
             customer.IsActive = false;
             customer.UpdatedAt = DateTime.Now;
 
-            await _dbContext.SaveChangesAsync();
-
-            return true;
+            await _db.SaveChangesAsync();
         }
-
-
     }
 }
