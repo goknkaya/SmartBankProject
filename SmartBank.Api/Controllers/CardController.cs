@@ -1,62 +1,51 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SmartBank.Application.Interfaces;
 using SmartBank.Application.DTOs.Card;
+using SmartBank.Application.Interfaces;
 
 namespace SmartBank.Api.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class CardController : ControllerBase
     {
-        private readonly ICardService _cardService;
+        private readonly ICardService _svc;
+        public CardController(ICardService svc) => _svc = svc;
 
-        public CardController(ICardService cardService)
-        {
-            _cardService = cardService;
-        }
-
+        // GET /api/Card
         [HttpGet]
-        public async Task<IActionResult> GetAllCards()
+        public async Task<ActionResult<List<SelectCardDto>>> GetAll()
+            => Ok(await _svc.GetAllAsync());
+
+        // GET /api/Card/5
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<SelectCardDto>> GetById(int id)
         {
-            var cards = await _cardService.GetAllCardsAsync();
-            return Ok(cards);
+            var dto = await _svc.GetByIdAsync(id);
+            return dto is null ? NotFound() : Ok(dto);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCardById(int id)
-        {
-            var card = await _cardService.GetCardByIdAsync(id);
-            return Ok(card);
-        }
-
+        // POST /api/Card
         [HttpPost]
-        public async Task<IActionResult> CreateCard([FromBody] CreateCardDto dto)
+        public async Task<ActionResult<SelectCardDto>> Create([FromBody] CreateCardDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _cardService.CreateCardAsync(dto);
-            return result ? Ok("Kart başarıyla oluşturuldu.") : BadRequest("Kart oluşturulamadı.");
+            var created = await _svc.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateCard([FromBody] UpdateCardDto dto)
+        // PUT /api/Card/5
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateCardDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _cardService.UpdateCardAsync(dto);
-            return result ? Ok("Kart başarıyla güncellendi.") : BadRequest("Kart güncellenemedi.");
+            await _svc.UpdateAsync(id, dto);
+            return NoContent(); // 204
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCard(int id)
+        // DELETE /api/Card/5  (soft delete içeride)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _cardService.DeleteCardAsync(id);
-            return result ? Ok("Kart başarıyla silindi.") : BadRequest("Kart silinemedi.");
+            await _svc.DeleteAsync(id);
+            return NoContent(); // 204
         }
     }
 }

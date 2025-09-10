@@ -69,5 +69,6 @@ namespace SmartBank.Domain.Entities
 
         // Navigasyon Property' si
         public Customer Customer { get; set; }
+        public bool IsContactless { get; set; } = false;
     }
 }
