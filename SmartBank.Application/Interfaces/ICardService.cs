@@ -16,5 +16,7 @@ namespace SmartBank.Application.Interfaces
         Task<SelectCardDto> CreateAsync(CreateCardDto dto);
         Task UpdateAsync(int id, UpdateCardDto dto);
         Task DeleteAsync(int id);
+        Task<CardPanDto?> GetPanAsync(int id);
+
     }
 }

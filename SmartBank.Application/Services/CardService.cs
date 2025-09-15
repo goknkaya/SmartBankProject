@@ -29,8 +29,47 @@ namespace SmartBank.Application.Services
                 .OrderBy(c => c.Id)
                 .ToListAsync();
 
-            return _mapper.Map<List<SelectCardDto>>(cards);
+            return cards.Select(c => new SelectCardDto
+            {
+                Id = c.Id,
+
+                // Customer
+                CustomerFullName = $"{(c.Customer?.FirstName ?? "").Trim()} {(c.Customer?.LastName ?? "").Trim()}".Trim(),
+
+                // Maskeli PAN
+                MaskedCardNumber = MaskPan(c.CardNumber),
+
+                // ExpiryDate -> AA / YY
+                ExpiryMonth = c.ExpiryDate.ToString("MM"),
+                ExpiryYear = c.ExpiryDate.ToString("yy"),
+
+                // Diğer alanlar
+                Currency = c.Currency ?? "TRY",
+                CardStatus = c.CardStatus ?? "A",
+
+                // Entity’de yok → boş bırak
+                CardStatusDescription = "",
+
+                IsVirtual = c.IsVirtual,
+                IsBlocked = c.IsBlocked,
+                IsContactless = c.IsContactless,
+
+                CardLimit = c.CardLimit,
+                DailyLimit = c.DailyLimit,
+                TransactionLimit = c.TransactionLimit,
+                FailedPinAttempts = c.FailedPinAttempts,
+                LastUsedAt = c.LastUsedAt,
+
+                CardProvider = c.CardProvider ?? "V",
+                CardIssuerBank = c.CardIssuerBank ?? "",
+                CardStatusChangeReason = c.CardStatusChangeReason ?? "",
+
+                ParentCardId = c.ParentCardId
+            }).ToList();
         }
+
+
+
 
         // Id'ye göre kart
         public async Task<SelectCardDto?> GetByIdAsync(int id)
@@ -199,6 +238,44 @@ namespace SmartBank.Application.Services
             card.UpdatedAt = DateTime.Now;
 
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<CardPanDto?> GetPanAsync(int id)
+        {
+            var pan = await _dbContext.Cards
+                .AsNoTracking()
+                .Where(c => c.Id == id && c.IsActive)
+                .Select(c => c.CardNumber)
+                .FirstOrDefaultAsync();
+
+            return pan is null ? null : new CardPanDto { CardNumber = pan };
+        }
+
+
+        private static string MaskPan(string? pan, char maskChar = '*')
+        {
+            if (string.IsNullOrWhiteSpace(pan))
+                return string.Empty;
+
+            // Sadece rakamlar
+            var digits = new string(pan.Where(char.IsDigit).ToArray());
+            var len = digits.Length;
+
+            // 6+4 kuralı uygulanamayacak kadar kısaysa maskesiz geri dön (sadece 4'lü gruplandır)
+            if (len <= 10)
+                return Group4(digits);
+
+            var first6 = digits.Substring(0, Math.Min(6, len));
+            var last4 = digits.Substring(len - 4, 4);
+            var midLen = Math.Max(0, len - first6.Length - last4.Length);
+
+            var masked = first6 + new string(maskChar, midLen) + last4;
+            return Group4(masked);
+
+            static string Group4(string s)
+                => string.Join(" ",
+                    Enumerable.Range(0, (s.Length + 3) / 4)
+                              .Select(i => s.Substring(i * 4, Math.Min(4, s.Length - i * 4))));
         }
     }
 }

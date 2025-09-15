@@ -47,5 +47,14 @@ namespace SmartBank.Api.Controllers
             await _svc.DeleteAsync(id);
             return NoContent(); // 204
         }
+        
+
+        [HttpGet("{id:int}/pan")]
+        public async Task<ActionResult<CardPanDto>> GetPan(int id)
+        {
+            var dto = await _svc.GetPanAsync(id);
+            return dto is null ? NotFound() : Ok(dto);
+        }
+
     }
 }

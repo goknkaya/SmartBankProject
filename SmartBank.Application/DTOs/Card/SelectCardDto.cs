@@ -20,4 +20,10 @@
     public string CardIssuerBank { get; set; }
     public string CardStatusChangeReason { get; set; }
     public int? ParentCardId { get; set; }
+    public bool IsContactless { get; set; }
+}
+
+public class CardDetailDto : SelectCardDto
+{
+    public string CardNumber { get; set; } = "";
 }
