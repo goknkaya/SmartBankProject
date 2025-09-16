@@ -313,14 +313,13 @@
             tlpForm.Controls.Add(label11, 0, 10);
             tlpForm.Controls.Add(label12, 0, 11);
             tlpForm.Controls.Add(pnlPreview, 1, 12);
-            tlpForm.Controls.Add(label13, 0, 12);
             tlpForm.Controls.Add(cboCustomer, 1, 0);
             tlpForm.Controls.Add(txtCardHolder, 1, 1);
             tlpForm.Controls.Add(panel1, 1, 8);
             tlpForm.Controls.Add(pnlFlags, 1, 9);
             tlpForm.Controls.Add(panel2, 1, 3);
             tlpForm.Controls.Add(label1, 0, 0);
-            tlpForm.Dock = DockStyle.Fill;
+            tlpForm.Controls.Add(label13, 0, 12);
             tlpForm.Location = new Point(8, 8);
             tlpForm.Name = "tlpForm";
             tlpForm.RowCount = 13;
@@ -343,12 +342,12 @@
             // 
             // cboBank
             // 
+            cboBank.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cboBank.DisplayMember = "CustomerFullName";
-            cboBank.Dock = DockStyle.Fill;
             cboBank.DropDownStyle = ComboBoxStyle.DropDownList;
             cboBank.FormattingEnabled = true;
             cboBank.Items.AddRange(new object[] { "Akbank", "Yapı Kredi", "Garanti", "Ziraat", "İşbankası", "QNB Finansbank", "Denizbank", "Halkbank", "Vakıfbank", "TEB", "Türkiye Finans", "ING" });
-            cboBank.Location = new Point(123, 403);
+            cboBank.Location = new Point(123, 408);
             cboBank.Name = "cboBank";
             cboBank.Size = new Size(537, 23);
             cboBank.TabIndex = 27;
@@ -356,7 +355,7 @@
             // 
             // txtReason
             // 
-            txtReason.Dock = DockStyle.Fill;
+            txtReason.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             txtReason.Location = new Point(123, 443);
             txtReason.MaxLength = 250;
             txtReason.Multiline = true;
@@ -367,11 +366,11 @@
             // 
             // cboStatus
             // 
+            cboStatus.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cboStatus.DisplayMember = "CustomerFullName";
-            cboStatus.Dock = DockStyle.Fill;
             cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;
             cboStatus.FormattingEnabled = true;
-            cboStatus.Location = new Point(123, 283);
+            cboStatus.Location = new Point(123, 288);
             cboStatus.Name = "cboStatus";
             cboStatus.Size = new Size(537, 23);
             cboStatus.TabIndex = 21;
@@ -379,11 +378,11 @@
             // 
             // cboType
             // 
+            cboType.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cboType.DisplayMember = "CustomerFullName";
-            cboType.Dock = DockStyle.Fill;
             cboType.DropDownStyle = ComboBoxStyle.DropDownList;
             cboType.FormattingEnabled = true;
-            cboType.Location = new Point(123, 243);
+            cboType.Location = new Point(123, 248);
             cboType.Name = "cboType";
             cboType.Size = new Size(537, 23);
             cboType.TabIndex = 20;
@@ -391,11 +390,11 @@
             // 
             // cboProvider
             // 
+            cboProvider.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cboProvider.DisplayMember = "CustomerFullName";
-            cboProvider.Dock = DockStyle.Fill;
             cboProvider.DropDownStyle = ComboBoxStyle.DropDownList;
             cboProvider.FormattingEnabled = true;
-            cboProvider.Location = new Point(123, 203);
+            cboProvider.Location = new Point(123, 208);
             cboProvider.Name = "cboProvider";
             cboProvider.Size = new Size(537, 23);
             cboProvider.TabIndex = 19;
@@ -403,11 +402,11 @@
             // 
             // cboCurrency
             // 
+            cboCurrency.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cboCurrency.DisplayMember = "CustomerFullName";
-            cboCurrency.Dock = DockStyle.Fill;
             cboCurrency.DropDownStyle = ComboBoxStyle.DropDownList;
             cboCurrency.FormattingEnabled = true;
-            cboCurrency.Location = new Point(123, 163);
+            cboCurrency.Location = new Point(123, 168);
             cboCurrency.Name = "cboCurrency";
             cboCurrency.Size = new Size(537, 23);
             cboCurrency.TabIndex = 18;
@@ -415,8 +414,8 @@
             // 
             // txtCardNumber
             // 
-            txtCardNumber.Dock = DockStyle.Fill;
-            txtCardNumber.Location = new Point(123, 83);
+            txtCardNumber.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            txtCardNumber.Location = new Point(123, 88);
             txtCardNumber.MaxLength = 16;
             txtCardNumber.Name = "txtCardNumber";
             txtCardNumber.Size = new Size(537, 23);
@@ -426,115 +425,115 @@
             // 
             label2.Anchor = AnchorStyles.Right;
             label2.AutoSize = true;
-            label2.Location = new Point(54, 52);
+            label2.Location = new Point(51, 52);
             label2.Name = "label2";
-            label2.Size = new Size(63, 15);
+            label2.Size = new Size(66, 15);
             label2.TabIndex = 2;
-            label2.Text = "Kart Sahibi";
+            label2.Text = "Kart Sahibi:";
             // 
             // label3
             // 
             label3.Anchor = AnchorStyles.Right;
             label3.AutoSize = true;
-            label3.Location = new Point(70, 92);
+            label3.Location = new Point(67, 92);
             label3.Name = "label3";
-            label3.Size = new Size(47, 15);
+            label3.Size = new Size(50, 15);
             label3.TabIndex = 3;
-            label3.Text = "Kart No";
+            label3.Text = "Kart No:";
             // 
             // label4
             // 
             label4.Anchor = AnchorStyles.Right;
             label4.AutoSize = true;
-            label4.Location = new Point(40, 132);
+            label4.Location = new Point(37, 132);
             label4.Name = "label4";
-            label4.Size = new Size(77, 15);
+            label4.Size = new Size(80, 15);
             label4.TabIndex = 4;
-            label4.Text = "Son Kullanım";
+            label4.Text = "Son Kullanım:";
             // 
             // label5
             // 
             label5.Anchor = AnchorStyles.Right;
             label5.AutoSize = true;
-            label5.Location = new Point(53, 172);
+            label5.Location = new Point(50, 172);
             label5.Name = "label5";
-            label5.Size = new Size(64, 15);
+            label5.Size = new Size(67, 15);
             label5.TabIndex = 5;
-            label5.Text = "Para Birimi";
+            label5.Text = "Para Birimi:";
             // 
             // label6
             // 
             label6.Anchor = AnchorStyles.Right;
             label6.AutoSize = true;
-            label6.Location = new Point(66, 212);
+            label6.Location = new Point(63, 212);
             label6.Name = "label6";
-            label6.Size = new Size(51, 15);
+            label6.Size = new Size(54, 15);
             label6.TabIndex = 6;
-            label6.Text = "Provider";
+            label6.Text = "Provider:";
             // 
             // label7
             // 
             label7.Anchor = AnchorStyles.Right;
             label7.AutoSize = true;
-            label7.Location = new Point(66, 252);
+            label7.Location = new Point(63, 252);
             label7.Name = "label7";
-            label7.Size = new Size(51, 15);
+            label7.Size = new Size(54, 15);
             label7.TabIndex = 7;
-            label7.Text = "Kart Tipi";
+            label7.Text = "Kart Tipi:";
             // 
             // label8
             // 
             label8.Anchor = AnchorStyles.Right;
             label8.AutoSize = true;
-            label8.Location = new Point(73, 292);
+            label8.Location = new Point(70, 292);
             label8.Name = "label8";
-            label8.Size = new Size(44, 15);
+            label8.Size = new Size(47, 15);
             label8.TabIndex = 8;
-            label8.Text = "Durum";
+            label8.Text = "Durum:";
             // 
             // label9
             // 
             label9.Anchor = AnchorStyles.Right;
             label9.AutoSize = true;
-            label9.Location = new Point(70, 332);
+            label9.Location = new Point(67, 332);
             label9.Name = "label9";
-            label9.Size = new Size(47, 15);
+            label9.Size = new Size(50, 15);
             label9.TabIndex = 9;
-            label9.Text = "Limitler";
+            label9.Text = "Limitler:";
             // 
             // label10
             // 
             label10.Anchor = AnchorStyles.Right;
             label10.AutoSize = true;
-            label10.Location = new Point(75, 372);
+            label10.Location = new Point(72, 372);
             label10.Name = "label10";
-            label10.Size = new Size(42, 15);
+            label10.Size = new Size(45, 15);
             label10.TabIndex = 10;
-            label10.Text = "Flaglar";
+            label10.Text = "Flaglar:";
             // 
             // label11
             // 
             label11.Anchor = AnchorStyles.Right;
             label11.AutoSize = true;
-            label11.Location = new Point(78, 412);
+            label11.Location = new Point(75, 412);
             label11.Name = "label11";
-            label11.Size = new Size(39, 15);
+            label11.Size = new Size(42, 15);
             label11.TabIndex = 11;
-            label11.Text = "Banka";
+            label11.Text = "Banka:";
             // 
             // label12
             // 
             label12.Anchor = AnchorStyles.Right;
             label12.AutoSize = true;
-            label12.Location = new Point(61, 462);
+            label12.Location = new Point(58, 462);
             label12.Name = "label12";
-            label12.Size = new Size(56, 15);
+            label12.Size = new Size(59, 15);
             label12.TabIndex = 12;
-            label12.Text = "Açıklama";
+            label12.Text = "Açıklama:";
             // 
             // pnlPreview
             // 
-            pnlPreview.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            pnlPreview.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             pnlPreview.BackColor = Color.DarkBlue;
             pnlPreview.BorderStyle = BorderStyle.FixedSingle;
             pnlPreview.Controls.Add(pbBank);
@@ -544,9 +543,9 @@
             pnlPreview.Controls.Add(lblExpMM);
             pnlPreview.Controls.Add(lblCustomer);
             pnlPreview.Controls.Add(lblCardNumber);
-            pnlPreview.Location = new Point(126, 503);
+            pnlPreview.Location = new Point(123, 503);
             pnlPreview.Name = "pnlPreview";
-            pnlPreview.Size = new Size(534, 215);
+            pnlPreview.Size = new Size(537, 215);
             pnlPreview.TabIndex = 0;
             // 
             // pbBank
@@ -626,19 +625,19 @@
             // 
             label13.Anchor = AnchorStyles.Right;
             label13.AutoSize = true;
-            label13.Location = new Point(60, 603);
+            label13.Location = new Point(57, 603);
             label13.Name = "label13";
-            label13.Size = new Size(57, 15);
+            label13.Size = new Size(60, 15);
             label13.TabIndex = 13;
-            label13.Text = "Önizleme";
+            label13.Text = "Önizleme:";
             // 
             // cboCustomer
             // 
+            cboCustomer.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cboCustomer.DisplayMember = "CustomerFullName";
-            cboCustomer.Dock = DockStyle.Fill;
             cboCustomer.DropDownStyle = ComboBoxStyle.DropDownList;
             cboCustomer.FormattingEnabled = true;
-            cboCustomer.Location = new Point(123, 3);
+            cboCustomer.Location = new Point(123, 8);
             cboCustomer.Name = "cboCustomer";
             cboCustomer.Size = new Size(537, 23);
             cboCustomer.TabIndex = 14;
@@ -646,8 +645,8 @@
             // 
             // txtCardHolder
             // 
-            txtCardHolder.Dock = DockStyle.Fill;
-            txtCardHolder.Location = new Point(123, 43);
+            txtCardHolder.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            txtCardHolder.Location = new Point(123, 48);
             txtCardHolder.MaxLength = 50;
             txtCardHolder.Name = "txtCardHolder";
             txtCardHolder.Size = new Size(537, 23);
@@ -669,6 +668,7 @@
             // 
             // label16
             // 
+            label16.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             label16.AutoSize = true;
             label16.Location = new Point(386, 9);
             label16.Name = "label16";
@@ -678,6 +678,7 @@
             // 
             // label15
             // 
+            label15.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             label15.AutoSize = true;
             label15.Location = new Point(189, 9);
             label15.Name = "label15";
@@ -687,6 +688,7 @@
             // 
             // label14
             // 
+            label14.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             label14.AutoSize = true;
             label14.Location = new Point(6, 9);
             label14.Name = "label14";
@@ -696,6 +698,7 @@
             // 
             // numTxnLimit
             // 
+            numTxnLimit.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             numTxnLimit.DecimalPlaces = 2;
             numTxnLimit.Location = new Point(425, 7);
             numTxnLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
@@ -706,6 +709,7 @@
             // 
             // numDailyLimit
             // 
+            numDailyLimit.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             numDailyLimit.DecimalPlaces = 2;
             numDailyLimit.Location = new Point(240, 7);
             numDailyLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
@@ -716,6 +720,7 @@
             // 
             // numCardLimit
             // 
+            numCardLimit.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             numCardLimit.DecimalPlaces = 2;
             numCardLimit.Location = new Point(40, 7);
             numCardLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
@@ -737,6 +742,7 @@
             // 
             // chkBlocked
             // 
+            chkBlocked.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             chkBlocked.AutoSize = true;
             chkBlocked.Location = new Point(147, 8);
             chkBlocked.Name = "chkBlocked";
@@ -747,6 +753,7 @@
             // 
             // chkContactless
             // 
+            chkContactless.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             chkContactless.AutoSize = true;
             chkContactless.Location = new Point(68, 8);
             chkContactless.Name = "chkContactless";
@@ -757,6 +764,7 @@
             // 
             // chkVirtual
             // 
+            chkVirtual.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             chkVirtual.AutoSize = true;
             chkVirtual.Location = new Point(6, 9);
             chkVirtual.Name = "chkVirtual";
@@ -767,9 +775,9 @@
             // 
             // panel2
             // 
+            panel2.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             panel2.Controls.Add(cboExpM);
             panel2.Controls.Add(cboExpY);
-            panel2.Dock = DockStyle.Fill;
             panel2.Location = new Point(123, 123);
             panel2.Name = "panel2";
             panel2.Size = new Size(537, 34);
@@ -803,11 +811,11 @@
             // 
             label1.Anchor = AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(70, 12);
+            label1.Location = new Point(67, 12);
             label1.Name = "label1";
-            label1.Size = new Size(47, 15);
+            label1.Size = new Size(50, 15);
             label1.TabIndex = 1;
-            label1.Text = "Müşteri";
+            label1.Text = "Müşteri:";
             // 
             // CardView
             // 

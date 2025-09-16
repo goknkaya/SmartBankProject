@@ -32,5 +32,10 @@ namespace SmartBank.Desktop.Win
         {
             OpenView(new CardView(_api));
         }
+
+        private void btnTransaction_Click(object sender, EventArgs e)
+        {
+            OpenView(new TransactionView(_api));
+        }
     }
 }

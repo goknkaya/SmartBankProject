@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             btnCustomer = new Button();
             btnCard = new Button();
             btnTransaction = new Button();
@@ -36,8 +37,10 @@
             btnReversal = new Button();
             btnChargeback = new Button();
             panelMenu = new Panel();
+            pictureBox1 = new PictureBox();
             panelContent = new Panel();
             panelMenu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
             // btnCustomer
@@ -89,6 +92,7 @@
             btnTransaction.Text = "Transaction";
             btnTransaction.TextAlign = ContentAlignment.MiddleLeft;
             btnTransaction.UseVisualStyleBackColor = true;
+            btnTransaction.Click += btnTransaction_Click;
             // 
             // btnSwitch
             // 
@@ -158,6 +162,7 @@
             // 
             panelMenu.BackColor = Color.Silver;
             panelMenu.BorderStyle = BorderStyle.FixedSingle;
+            panelMenu.Controls.Add(pictureBox1);
             panelMenu.Controls.Add(btnChargeback);
             panelMenu.Controls.Add(btnReversal);
             panelMenu.Controls.Add(btnClearing);
@@ -171,24 +176,36 @@
             panelMenu.Size = new Size(200, 450);
             panelMenu.TabIndex = 1;
             // 
+            // pictureBox1
+            // 
+            pictureBox1.Dock = DockStyle.Bottom;
+            pictureBox1.Image = (Image)resources.GetObject("pictureBox1.Image");
+            pictureBox1.Location = new Point(0, 289);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(198, 159);
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBox1.TabIndex = 0;
+            pictureBox1.TabStop = false;
+            // 
             // panelContent
             // 
             panelContent.Dock = DockStyle.Fill;
             panelContent.Location = new Point(200, 0);
             panelContent.Name = "panelContent";
-            panelContent.Size = new Size(1106, 450);
+            panelContent.Size = new Size(528, 450);
             panelContent.TabIndex = 2;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1306, 450);
+            ClientSize = new Size(728, 450);
             Controls.Add(panelContent);
             Controls.Add(panelMenu);
             Name = "MainForm";
             Text = "SmartBank Ödeme Sistemleri";
             panelMenu.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
         }
 
@@ -203,5 +220,6 @@
         private Button btnChargeback;
         private Panel panelMenu;
         private Panel panelContent;
+        private PictureBox pictureBox1;
     }
 }
