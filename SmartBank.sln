@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartBank.Domain", "SmartBa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartBank.Infrastructure", "SmartBank.Infrastructure\SmartBank.Infrastructure.csproj", "{4FAFE324-3C31-46B4-95BD-F315EADA5FB5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartBank.Desktop.Win", "SmartBank.Desktop\SmartBank.Desktop.Win\SmartBank.Desktop.Win.csproj", "{A72D83BD-29A1-276B-B75C-1F54277501F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{4FAFE324-3C31-46B4-95BD-F315EADA5FB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FAFE324-3C31-46B4-95BD-F315EADA5FB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FAFE324-3C31-46B4-95BD-F315EADA5FB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A72D83BD-29A1-276B-B75C-1F54277501F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A72D83BD-29A1-276B-B75C-1F54277501F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A72D83BD-29A1-276B-B75C-1F54277501F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A72D83BD-29A1-276B-B75C-1F54277501F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

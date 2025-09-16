@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartBank.Desktop.Win", "SmartBank.Desktop.Win\SmartBank.Desktop.Win.csproj", "{5BD63CB4-0640-4902-81FE-E97B02C1ED1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartBank.Api", "..\SmartBank\SmartBank.Api\SmartBank.Api.csproj", "{5BFE23C8-78F2-33CC-183C-E6F7021AE36A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5BD63CB4-0640-4902-81FE-E97B02C1ED1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD63CB4-0640-4902-81FE-E97B02C1ED1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD63CB4-0640-4902-81FE-E97B02C1ED1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BD63CB4-0640-4902-81FE-E97B02C1ED1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BFE23C8-78F2-33CC-183C-E6F7021AE36A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BFE23C8-78F2-33CC-183C-E6F7021AE36A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BFE23C8-78F2-33CC-183C-E6F7021AE36A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BFE23C8-78F2-33CC-183C-E6F7021AE36A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {360A8E79-41F5-4BD2-B282-D6861DEE6482}
+	EndGlobalSection
+EndGlobal
