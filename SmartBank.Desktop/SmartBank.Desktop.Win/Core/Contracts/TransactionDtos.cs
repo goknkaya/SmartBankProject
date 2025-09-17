@@ -16,6 +16,7 @@ namespace SmartBank.Desktop.Win.Core.Contracts
         public DateTime TransactionDate { get; set; }
         public string Status { get; set; } = "S";
         public string? Description { get; set; }
+        public string Card { get; set; } = ""; // sadece gösterim için (gridde “Kart” kolonu buna bakacak)
     }
 
     // CREATE

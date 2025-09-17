@@ -101,9 +101,26 @@ namespace SmartBank.Application.Services
 
         public async Task<List<SelectTransactionDto>> GetAllTransactionsAsync()
         {
-            var transactions = await _dbContext.Transactions.ToListAsync();
+            var q = await _dbContext.Transactions
+                .AsNoTracking()
+                .Include(t => t.Card)
+                .OrderByDescending(t => t.TransactionDate)
+                .Select(t => new SelectTransactionDto
+                {
+                    Id = t.Id,
+                    CardId = t.CardId,
+                    Currency = t.Currency,
+                    Amount = t.Amount,
+                    TransactionDate = t.TransactionDate,
+                    Status = t.Status,
+                    Description = t.Description,
+                    Card = t.Card != null
+                        ? (t.Card.Id + " - " + MaskPan(t.Card.CardNumber))
+                        : ("#" + t.CardId)
+                })
+                .ToListAsync();
 
-            return _mapper.Map<List<SelectTransactionDto>>(transactions);
+            return q;
         }
 
         public async Task<SelectTransactionDto> GetTransactionByIdAsync(int id)
@@ -134,6 +151,16 @@ namespace SmartBank.Application.Services
                 .ToListAsync();
 
             return _mapper.Map<List<SelectTransactionDto>>(transactions).ToList();
+        }
+
+        private static string MaskPan(string? pan)
+        {
+            if (string.IsNullOrWhiteSpace(pan)) return "";
+            var digits = new string(pan.Where(char.IsDigit).ToArray());
+            if (digits.Length <= 10) return digits;    // kısa pan: maskeleme uygulama
+            var first6 = digits[..6];
+            var last4 = digits[^4..];
+            return first6 + new string('*', digits.Length - 10) + last4;
         }
     }
 }

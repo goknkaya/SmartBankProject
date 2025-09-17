@@ -30,14 +30,13 @@
         {
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
             dgvTx = new DataGridView();
             colId = new DataGridViewTextBoxColumn();
             colCardId = new DataGridViewTextBoxColumn();
-            colTxnDate = new DataGridViewTextBoxColumn();
             colCurr = new DataGridViewTextBoxColumn();
-            colAmt = new DataGridViewTextBoxColumn();
+            colAmount = new DataGridViewTextBoxColumn();
             colStatus = new DataGridViewTextBoxColumn();
+            colTxnDate = new DataGridViewTextBoxColumn();
             colDesc = new DataGridViewTextBoxColumn();
             cboCard = new ComboBox();
             nudAmount = new NumericUpDown();
@@ -50,7 +49,7 @@
             miGetById = new ToolStripMenuItem();
             miGetByCard = new ToolStripMenuItem();
             miCreate = new ToolStripMenuItem();
-            temizleToolStripMenuItem = new ToolStripMenuItem();
+            miClear = new ToolStripMenuItem();
             tableLayoutPanel1 = new TableLayoutPanel();
             label6 = new Label();
             label5 = new Label();
@@ -69,10 +68,10 @@
             // dgvTx
             // 
             dgvTx.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvTx.Columns.AddRange(new DataGridViewColumn[] { colId, colCardId, colTxnDate, colCurr, colAmt, colStatus, colDesc });
-            dgvTx.Location = new Point(464, 44);
+            dgvTx.Columns.AddRange(new DataGridViewColumn[] { colId, colCardId, colCurr, colAmount, colStatus, colTxnDate, colDesc });
+            dgvTx.Location = new Point(22, 239);
             dgvTx.Name = "dgvTx";
-            dgvTx.Size = new Size(848, 176);
+            dgvTx.Size = new Size(1239, 176);
             dgvTx.TabIndex = 0;
             // 
             // colId
@@ -86,26 +85,22 @@
             colCardId.DataPropertyName = "CardId";
             colCardId.HeaderText = "Kart";
             colCardId.Name = "colCardId";
-            // 
-            // colTxnDate
-            // 
-            dataGridViewCellStyle1.Format = "g";
-            colTxnDate.DefaultCellStyle = dataGridViewCellStyle1;
-            colTxnDate.HeaderText = "Tarih";
-            colTxnDate.Name = "colTxnDate";
+            colCardId.Width = 300;
             // 
             // colCurr
             // 
-            colCurr.HeaderText = "PB";
+            colCurr.DataPropertyName = "Currency";
+            colCurr.HeaderText = "Para Birimi";
             colCurr.Name = "colCurr";
             // 
-            // colAmt
+            // colAmount
             // 
-            colAmt.DataPropertyName = "Amount";
-            dataGridViewCellStyle2.Format = "N2";
-            colAmt.DefaultCellStyle = dataGridViewCellStyle2;
-            colAmt.HeaderText = "Tutar";
-            colAmt.Name = "colAmt";
+            colAmount.DataPropertyName = "Amount";
+            dataGridViewCellStyle1.Format = "N2";
+            dataGridViewCellStyle1.NullValue = null;
+            colAmount.DefaultCellStyle = dataGridViewCellStyle1;
+            colAmount.HeaderText = "Tutar";
+            colAmount.Name = "colAmount";
             // 
             // colStatus
             // 
@@ -113,12 +108,18 @@
             colStatus.HeaderText = "Durum";
             colStatus.Name = "colStatus";
             // 
+            // colTxnDate
+            // 
+            colTxnDate.DataPropertyName = "TransactionDate";
+            dataGridViewCellStyle2.Format = "dd.MM.yyyy HH:mm";
+            colTxnDate.DefaultCellStyle = dataGridViewCellStyle2;
+            colTxnDate.HeaderText = "Tarih";
+            colTxnDate.Name = "colTxnDate";
+            // 
             // colDesc
             // 
             colDesc.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             colDesc.DataPropertyName = "Description";
-            dataGridViewCellStyle3.Format = "(Fill)";
-            colDesc.DefaultCellStyle = dataGridViewCellStyle3;
             colDesc.HeaderText = "Açıklama";
             colDesc.Name = "colDesc";
             // 
@@ -183,10 +184,10 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { miList, miGetById, miGetByCard, miCreate, temizleToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { miList, miGetById, miGetByCard, miCreate, miClear });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1337, 24);
+            menuStrip1.Size = new Size(1283, 24);
             menuStrip1.TabIndex = 8;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -214,11 +215,11 @@
             miCreate.Size = new Size(58, 20);
             miCreate.Text = "Oluştur";
             // 
-            // temizleToolStripMenuItem
+            // miClear
             // 
-            temizleToolStripMenuItem.Name = "temizleToolStripMenuItem";
-            temizleToolStripMenuItem.Size = new Size(59, 20);
-            temizleToolStripMenuItem.Text = "Temizle";
+            miClear.Name = "miClear";
+            miClear.Size = new Size(59, 20);
+            miClear.Text = "Temizle";
             // 
             // tableLayoutPanel1
             // 
@@ -345,7 +346,7 @@
             Controls.Add(tableLayoutPanel1);
             Controls.Add(menuStrip1);
             Name = "TransactionView";
-            Size = new Size(1337, 238);
+            Size = new Size(1283, 434);
             ((System.ComponentModel.ISupportInitialize)dgvTx).EndInit();
             ((System.ComponentModel.ISupportInitialize)nudAmount).EndInit();
             menuStrip1.ResumeLayout(false);
@@ -379,13 +380,13 @@
         private Label label3;
         private Label label2;
         private Label label1;
+        private ToolStripMenuItem miClear;
         private DataGridViewTextBoxColumn colId;
         private DataGridViewTextBoxColumn colCardId;
-        private DataGridViewTextBoxColumn colTxnDate;
         private DataGridViewTextBoxColumn colCurr;
-        private DataGridViewTextBoxColumn colAmt;
+        private DataGridViewTextBoxColumn colAmount;
         private DataGridViewTextBoxColumn colStatus;
+        private DataGridViewTextBoxColumn colTxnDate;
         private DataGridViewTextBoxColumn colDesc;
-        private ToolStripMenuItem temizleToolStripMenuItem;
     }
 }
