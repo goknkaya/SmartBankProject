@@ -118,6 +118,7 @@ namespace SmartBank.Application.Services
                         ? (t.Card.Id + " - " + MaskPan(t.Card.CardNumber))
                         : ("#" + t.CardId)
                 })
+                .OrderBy(t => t.Id)
                 .ToListAsync();
 
             return q;
