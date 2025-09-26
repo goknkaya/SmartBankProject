@@ -17,7 +17,7 @@ namespace SmartBank.Api.Controllers
 
         // POST: api/Reversal
         [HttpPost]
-        public async Task<IActionResult> CreateReversal([FromBody] CreateReversalDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateReversalDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -33,9 +33,16 @@ namespace SmartBank.Api.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var items = await _reversalService.GetAllReversalsAsync();
+            return Ok(items);
+        }
+
         // GET: api/Reversal/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetReversalById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
             try
             {
@@ -50,7 +57,7 @@ namespace SmartBank.Api.Controllers
 
         // GET: api/Reversal/tx/{transactionId}
         [HttpGet("tx/{transactionId}")]
-        public async Task<IActionResult> GetReversalByTransactionId(int transactionId)
+        public async Task<IActionResult> GetByTransaction(int transactionId)
         {
             var items = await _reversalService.GetReversalsByTransactionIdAsync(transactionId);
             return Ok(items);
@@ -58,7 +65,7 @@ namespace SmartBank.Api.Controllers
 
         // POST: api/Reversal/{id}/void
         [HttpPost("{id}/void")]
-        public async Task<IActionResult> VoidReversal(int id, [FromBody] VoidReversalRequest body)
+        public async Task<IActionResult> Void(int id, [FromBody] VoidReversalRequest body)
         {
             if (body is null || string.IsNullOrWhiteSpace(body.PerformedBy))
                 return BadRequest("PerformedBy zorunludur.");
@@ -66,7 +73,7 @@ namespace SmartBank.Api.Controllers
             try
             {
                 var ok = await _reversalService.VoidReversalAsync(id, body.PerformedBy!, body.Reason ?? "");
-                return ok ? Ok("Reversal başarıyla VOID edildi.") : BadRequest("Reversal VOID edilemedi.");
+                return ok ? Ok("Reversal başarıyla iptal edildi.") : BadRequest("Reversal iptal edilemedi.");
             }
             catch (Exception ex)
             {

@@ -1,18 +1,18 @@
-﻿using System.Text;
-using System.Text.Json.Serialization;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
+using SmartBank.Application.DTOs.Validators.Reversal;
+using SmartBank.Application.Interfaces;
+using SmartBank.Application.MappingProfiles;
+using SmartBank.Application.Services;
+using SmartBank.Application.Validators.Switch;
 // SmartBank
 using SmartBank.Infrastructure.Persistence;
-using SmartBank.Application.Interfaces;
-using SmartBank.Application.Services;
-using SmartBank.Application.MappingProfiles;
-using SmartBank.Application.Validators.Switch;
+using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +26,8 @@ builder.Services.AddFluentValidationAutoValidation()
                 .AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssembly(typeof(ClearingProfile).Assembly);
 builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidator).Assembly);
+builder.Services.AddAutoMapper(typeof(ReversalProfile).Assembly);
+builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
 
 // ---- Services (DI)
 builder.Services.AddScoped<ICustomerService, CustomerService>();

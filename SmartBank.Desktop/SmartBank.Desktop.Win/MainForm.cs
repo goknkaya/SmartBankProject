@@ -37,5 +37,10 @@ namespace SmartBank.Desktop.Win
         {
             OpenView(new TransactionView(_api));
         }
+
+        private void btnReversal_Click(object sender, EventArgs e)
+        {
+            OpenView(new ReversalView(_api));
+        }
     }
 }

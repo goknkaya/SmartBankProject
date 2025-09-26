@@ -17,5 +17,9 @@ namespace SmartBank.Application.DTOs.Reversal
         public DateTime ReversalDate { get; set; }
         public string ReversalSource { get; set; }
         public bool IsCardLimitRestored { get; set; }
+
+        public string? VoidedBy { get; set; }
+        public DateTime? VoidedAt { get; set; }
+        public string? VoidReason { get; set; }
     }
 }

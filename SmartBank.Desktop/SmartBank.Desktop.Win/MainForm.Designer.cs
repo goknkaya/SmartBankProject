@@ -141,6 +141,7 @@
             btnReversal.Text = "Reversal";
             btnReversal.TextAlign = ContentAlignment.MiddleLeft;
             btnReversal.UseVisualStyleBackColor = true;
+            btnReversal.Click += btnReversal_Click;
             // 
             // btnChargeback
             // 

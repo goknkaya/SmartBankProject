@@ -31,6 +31,13 @@
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             dgvTx = new DataGridView();
+            colId = new DataGridViewTextBoxColumn();
+            colCardId = new DataGridViewTextBoxColumn();
+            colCurr = new DataGridViewTextBoxColumn();
+            colAmount = new DataGridViewTextBoxColumn();
+            colStatus = new DataGridViewTextBoxColumn();
+            colTxnDate = new DataGridViewTextBoxColumn();
+            colDesc = new DataGridViewTextBoxColumn();
             cboCard = new ComboBox();
             nudAmount = new NumericUpDown();
             cboCurrency = new ComboBox();
@@ -50,15 +57,8 @@
             label3 = new Label();
             label2 = new Label();
             txtSearchCardId = new TextBox();
-            label1 = new Label();
             label7 = new Label();
-            colId = new DataGridViewTextBoxColumn();
-            colCardId = new DataGridViewTextBoxColumn();
-            colCurr = new DataGridViewTextBoxColumn();
-            colAmount = new DataGridViewTextBoxColumn();
-            colStatus = new DataGridViewTextBoxColumn();
-            colTxnDate = new DataGridViewTextBoxColumn();
-            colDesc = new DataGridViewTextBoxColumn();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)dgvTx).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudAmount).BeginInit();
             menuStrip1.SuspendLayout();
@@ -73,6 +73,55 @@
             dgvTx.Name = "dgvTx";
             dgvTx.Size = new Size(1018, 494);
             dgvTx.TabIndex = 0;
+            // 
+            // colId
+            // 
+            colId.DataPropertyName = "Id";
+            colId.HeaderText = "ID";
+            colId.Name = "colId";
+            // 
+            // colCardId
+            // 
+            colCardId.DataPropertyName = "CardId";
+            colCardId.HeaderText = "Kart";
+            colCardId.Name = "colCardId";
+            colCardId.Width = 200;
+            // 
+            // colCurr
+            // 
+            colCurr.DataPropertyName = "Currency";
+            colCurr.HeaderText = "Para Birimi";
+            colCurr.Name = "colCurr";
+            // 
+            // colAmount
+            // 
+            colAmount.DataPropertyName = "Amount";
+            dataGridViewCellStyle1.Format = "N2";
+            dataGridViewCellStyle1.NullValue = null;
+            colAmount.DefaultCellStyle = dataGridViewCellStyle1;
+            colAmount.HeaderText = "Tutar";
+            colAmount.Name = "colAmount";
+            // 
+            // colStatus
+            // 
+            colStatus.DataPropertyName = "Status";
+            colStatus.HeaderText = "Durum";
+            colStatus.Name = "colStatus";
+            // 
+            // colTxnDate
+            // 
+            colTxnDate.DataPropertyName = "TransactionDate";
+            dataGridViewCellStyle2.Format = "dd.MM.yyyy HH:mm";
+            colTxnDate.DefaultCellStyle = dataGridViewCellStyle2;
+            colTxnDate.HeaderText = "Tarih";
+            colTxnDate.Name = "colTxnDate";
+            // 
+            // colDesc
+            // 
+            colDesc.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            colDesc.DataPropertyName = "Description";
+            colDesc.HeaderText = "Açıklama";
+            colDesc.Name = "colDesc";
             // 
             // cboCard
             // 
@@ -267,17 +316,6 @@
             txtSearchCardId.Size = new Size(270, 23);
             txtSearchCardId.TabIndex = 8;
             // 
-            // label1
-            // 
-            label1.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            label1.AutoSize = true;
-            label1.Location = new Point(3, 5);
-            label1.Name = "label1";
-            label1.Size = new Size(154, 15);
-            label1.TabIndex = 9;
-            label1.Text = "Kart Seçimi:";
-            label1.TextAlign = ContentAlignment.MiddleRight;
-            // 
             // label7
             // 
             label7.Anchor = AnchorStyles.Left | AnchorStyles.Right;
@@ -289,54 +327,16 @@
             label7.Text = "Kart İşlemleri İçin:";
             label7.TextAlign = ContentAlignment.MiddleRight;
             // 
-            // colId
+            // label1
             // 
-            colId.DataPropertyName = "Id";
-            colId.HeaderText = "ID";
-            colId.Name = "colId";
-            // 
-            // colCardId
-            // 
-            colCardId.DataPropertyName = "CardId";
-            colCardId.HeaderText = "Kart";
-            colCardId.Name = "colCardId";
-            colCardId.Width = 200;
-            // 
-            // colCurr
-            // 
-            colCurr.DataPropertyName = "Currency";
-            colCurr.HeaderText = "Para Birimi";
-            colCurr.Name = "colCurr";
-            // 
-            // colAmount
-            // 
-            colAmount.DataPropertyName = "Amount";
-            dataGridViewCellStyle1.Format = "N2";
-            dataGridViewCellStyle1.NullValue = null;
-            colAmount.DefaultCellStyle = dataGridViewCellStyle1;
-            colAmount.HeaderText = "Tutar";
-            colAmount.Name = "colAmount";
-            // 
-            // colStatus
-            // 
-            colStatus.DataPropertyName = "Status";
-            colStatus.HeaderText = "Durum";
-            colStatus.Name = "colStatus";
-            // 
-            // colTxnDate
-            // 
-            colTxnDate.DataPropertyName = "TransactionDate";
-            dataGridViewCellStyle2.Format = "dd.MM.yyyy HH:mm";
-            colTxnDate.DefaultCellStyle = dataGridViewCellStyle2;
-            colTxnDate.HeaderText = "Tarih";
-            colTxnDate.Name = "colTxnDate";
-            // 
-            // colDesc
-            // 
-            colDesc.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            colDesc.DataPropertyName = "Description";
-            colDesc.HeaderText = "Açıklama";
-            colDesc.Name = "colDesc";
+            label1.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            label1.AutoSize = true;
+            label1.Location = new Point(3, 5);
+            label1.Name = "label1";
+            label1.Size = new Size(154, 15);
+            label1.TabIndex = 9;
+            label1.Text = "Kart Seçimi:";
+            label1.TextAlign = ContentAlignment.MiddleRight;
             // 
             // TransactionView
             // 

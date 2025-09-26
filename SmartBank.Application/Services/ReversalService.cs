@@ -26,7 +26,7 @@ namespace SmartBank.Application.Services
 
             // 1) İşlem var mı?
             var txEntity = await _dbContext.Transactions
-                .AsNoTracking()                    // kartı ayrıca çekeceğiz; tracking karışmasın
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == dto.TransactionId);
 
             if (txEntity == null)
@@ -46,7 +46,7 @@ namespace SmartBank.Application.Services
             if (string.IsNullOrWhiteSpace(dto.PerformedBy))
                 throw new InvalidOperationException("Reversal işlemi yapan kullanıcı zorunludur.");
 
-            // 3) Kartı ayrı query ile T R A C K E D çek ve güncelle
+            // 3) Kartı tracked çek
             var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == txEntity.CardId);
             bool isCardLimitRestored = false;
 
@@ -88,8 +88,9 @@ namespace SmartBank.Application.Services
         public async Task<List<SelectReversalDto>> GetAllReversalsAsync()
         {
             var reversals = await _dbContext.Reversals
-                .Where(r => r.Status != "V") // Void olmayanlar
+                //.Where(r => r.Status != "V")   // Void olmayanlar
                 .ToListAsync();
+
 
             return _mapper.Map<List<SelectReversalDto>>(reversals);
         }
@@ -98,7 +99,7 @@ namespace SmartBank.Application.Services
         public async Task<SelectReversalDto> GetReversalByIdAsync(int id)
         {
             var reversal = await _dbContext.Reversals
-                .FirstOrDefaultAsync(r => r.Id == id && r.Status != "V");
+                .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
 
             if (reversal == null)
                 throw new InvalidOperationException("Reversal bulunamadı.");
