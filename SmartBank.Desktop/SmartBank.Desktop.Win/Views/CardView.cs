@@ -46,6 +46,9 @@ namespace SmartBank.Desktop.Win.Views
             // ilk ekran
             _ = LoadAllAsync();
             EnterViewMode();
+
+            this.Load += (_, __) => UpdateFormTitle();
+            this.VisibleChanged += (_, __) => { if (Visible) UpdateFormTitle(); };
         }
 
         #region Init
@@ -716,6 +719,13 @@ namespace SmartBank.Desktop.Win.Views
             }
             catch { }
             return fallback;
+        }
+
+        private void UpdateFormTitle()
+        {
+            var f = this.FindForm();
+            if (f != null)
+                f.Text = "SmartBank Ödeme Sistemleri / Card";
         }
         #endregion
     }

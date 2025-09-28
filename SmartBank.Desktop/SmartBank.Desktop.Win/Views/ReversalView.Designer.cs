@@ -28,11 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
             menuStrip1 = new MenuStrip();
             miList = new ToolStripMenuItem();
             miGetById = new ToolStripMenuItem();
@@ -118,8 +118,8 @@
             // miVoid
             // 
             miVoid.Name = "miVoid";
-            miVoid.Size = new Size(55, 20);
-            miVoid.Text = "İptal Et";
+            miVoid.Size = new Size(89, 20);
+            miVoid.Text = "Void (İptal) Et";
             // 
             // miClear
             // 
@@ -145,7 +145,7 @@
             // 
             // txtReason
             // 
-            txtReason.Location = new Point(126, 22);
+            txtReason.Location = new Point(159, 22);
             txtReason.MaxLength = 200;
             txtReason.Name = "txtReason";
             txtReason.Size = new Size(209, 23);
@@ -153,7 +153,7 @@
             // 
             // txtPerformedBy
             // 
-            txtPerformedBy.Location = new Point(126, 51);
+            txtPerformedBy.Location = new Point(159, 51);
             txtPerformedBy.MaxLength = 100;
             txtPerformedBy.Name = "txtPerformedBy";
             txtPerformedBy.Size = new Size(209, 23);
@@ -161,14 +161,14 @@
             // 
             // txtSearchId
             // 
-            txtSearchId.Location = new Point(129, 32);
+            txtSearchId.Location = new Point(159, 32);
             txtSearchId.Name = "txtSearchId";
             txtSearchId.Size = new Size(209, 23);
             txtSearchId.TabIndex = 6;
             // 
             // txtSearchTxnId
             // 
-            txtSearchTxnId.Location = new Point(129, 61);
+            txtSearchTxnId.Location = new Point(159, 61);
             txtSearchTxnId.Name = "txtSearchTxnId";
             txtSearchTxnId.Size = new Size(209, 23);
             txtSearchTxnId.TabIndex = 7;
@@ -176,7 +176,7 @@
             // nudAmount
             // 
             nudAmount.DecimalPlaces = 2;
-            nudAmount.Location = new Point(126, 80);
+            nudAmount.Location = new Point(159, 80);
             nudAmount.Maximum = new decimal(new int[] { 99999999, 0, 0, 0 });
             nudAmount.Name = "nudAmount";
             nudAmount.Size = new Size(209, 23);
@@ -188,7 +188,7 @@
             cboSource.DropDownStyle = ComboBoxStyle.DropDownList;
             cboSource.FormattingEnabled = true;
             cboSource.Items.AddRange(new object[] { "API", "MANUEL", "BATCH" });
-            cboSource.Location = new Point(126, 109);
+            cboSource.Location = new Point(159, 109);
             cboSource.Name = "cboSource";
             cboSource.Size = new Size(209, 23);
             cboSource.TabIndex = 9;
@@ -201,12 +201,13 @@
             dgvRev.Name = "dgvRev";
             dgvRev.Size = new Size(1420, 388);
             dgvRev.TabIndex = 10;
+            dgvRev.CellFormatting += dgvRev_CellFormatting;
             // 
             // colId
             // 
             colId.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            colId.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle6.Alignment = DataGridViewContentAlignment.MiddleRight;
+            colId.DefaultCellStyle = dataGridViewCellStyle6;
             colId.HeaderText = "ID";
             colId.Name = "colId";
             colId.ReadOnly = true;
@@ -215,8 +216,8 @@
             // colTransactionId
             // 
             colTransactionId.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
-            colTransactionId.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleRight;
+            colTransactionId.DefaultCellStyle = dataGridViewCellStyle7;
             colTransactionId.HeaderText = "İşlem ID";
             colTransactionId.Name = "colTransactionId";
             colTransactionId.ReadOnly = true;
@@ -225,9 +226,9 @@
             // colReversedAmount
             // 
             colReversedAmount.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle3.Format = "N2";
-            colReversedAmount.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle8.Format = "N2";
+            colReversedAmount.DefaultCellStyle = dataGridViewCellStyle8;
             colReversedAmount.HeaderText = "Tutar (Reversal)";
             colReversedAmount.Name = "colReversedAmount";
             colReversedAmount.ReadOnly = true;
@@ -236,11 +237,11 @@
             // colReason
             // 
             colReason.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            colReason.HeaderText = "İptal Nedeni";
+            colReason.HeaderText = "Reversal Nedeni";
             colReason.MaxInputLength = 200;
             colReason.Name = "colReason";
             colReason.ReadOnly = true;
-            colReason.Width = 88;
+            colReason.Width = 106;
             // 
             // colPerformedBy
             // 
@@ -262,8 +263,8 @@
             // colReversalDate
             // 
             colReversalDate.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle4.Format = "dd.MM.yyyy HH:mm";
-            colReversalDate.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle9.Format = "dd.MM.yyyy HH:mm";
+            colReversalDate.DefaultCellStyle = dataGridViewCellStyle9;
             colReversalDate.HeaderText = "Reversal Tarihi";
             colReversalDate.Name = "colReversalDate";
             colReversalDate.ReadOnly = true;
@@ -289,7 +290,7 @@
             // colVoidedBy
             // 
             colVoidedBy.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            colVoidedBy.HeaderText = "İptal Eden";
+            colVoidedBy.HeaderText = "Void Eden";
             colVoidedBy.Name = "colVoidedBy";
             colVoidedBy.ReadOnly = true;
             colVoidedBy.Resizable = DataGridViewTriState.True;
@@ -298,9 +299,9 @@
             // colVoidedAt
             // 
             colVoidedAt.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle5.Format = "dd.MM.yyyy HH:mm";
-            colVoidedAt.DefaultCellStyle = dataGridViewCellStyle5;
-            colVoidedAt.HeaderText = "İptal Tarihi";
+            dataGridViewCellStyle10.Format = "dd.MM.yyyy HH:mm";
+            colVoidedAt.DefaultCellStyle = dataGridViewCellStyle10;
+            colVoidedAt.HeaderText = "Void Tarihi";
             colVoidedAt.Name = "colVoidedAt";
             colVoidedAt.ReadOnly = true;
             colVoidedAt.Width = 80;
@@ -308,41 +309,41 @@
             // colVoidReason
             // 
             colVoidReason.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            colVoidReason.HeaderText = "İptal Sebebi";
+            colVoidReason.HeaderText = "Void Sebebi";
             colVoidReason.Name = "colVoidReason";
             colVoidReason.ReadOnly = true;
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(53, 35);
+            label1.Location = new Point(126, 35);
             label1.Name = "label1";
-            label1.Size = new Size(70, 15);
+            label1.Size = new Size(24, 15);
             label1.TabIndex = 11;
-            label1.Text = "Reversal ID :";
+            label1.Text = "ID :";
             // 
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(39, 64);
+            label2.Location = new Point(23, 64);
             label2.Name = "label2";
-            label2.Size = new Size(84, 15);
+            label2.Size = new Size(127, 15);
             label2.TabIndex = 12;
-            label2.Text = "İşlem (Txn) ID :";
+            label2.Text = "İşlem (Transaction) ID :";
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(35, 25);
+            label3.Location = new Point(53, 25);
             label3.Name = "label3";
-            label3.Size = new Size(77, 15);
+            label3.Size = new Size(97, 15);
             label3.TabIndex = 13;
-            label3.Text = "İptal Nedeni :";
+            label3.Text = "Reversal Nedeni :";
             // 
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(33, 54);
+            label4.Location = new Point(71, 54);
             label4.Name = "label4";
             label4.Size = new Size(79, 15);
             label4.TabIndex = 14;
@@ -369,7 +370,7 @@
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new Point(17, 82);
+            label7.Location = new Point(55, 82);
             label7.Name = "label7";
             label7.Size = new Size(95, 15);
             label7.TabIndex = 17;
@@ -378,7 +379,7 @@
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(61, 112);
+            label8.Location = new Point(99, 112);
             label8.Name = "label8";
             label8.Size = new Size(51, 15);
             label8.TabIndex = 18;
@@ -409,7 +410,7 @@
             groupBox1.Controls.Add(label2);
             groupBox1.Location = new Point(37, 29);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(359, 100);
+            groupBox1.Size = new Size(437, 111);
             groupBox1.TabIndex = 21;
             groupBox1.TabStop = false;
             groupBox1.Text = "ARA";
@@ -426,7 +427,7 @@
             groupBox2.Controls.Add(label4);
             groupBox2.Location = new Point(37, 146);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(359, 138);
+            groupBox2.Size = new Size(437, 138);
             groupBox2.TabIndex = 22;
             groupBox2.TabStop = false;
             groupBox2.Text = "OLUŞTUR";
@@ -439,9 +440,9 @@
             groupBox3.Controls.Add(label9);
             groupBox3.Controls.Add(label6);
             groupBox3.Controls.Add(txtReversalId);
-            groupBox3.Location = new Point(411, 29);
+            groupBox3.Location = new Point(480, 29);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(358, 123);
+            groupBox3.Size = new Size(358, 111);
             groupBox3.TabIndex = 23;
             groupBox3.TabStop = false;
             groupBox3.Text = "SEÇİLİ REVERSAL";
@@ -457,6 +458,7 @@
             Controls.Add(menuStrip1);
             Name = "ReversalView";
             Size = new Size(1455, 731);
+            Load += ReversalView_Load;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)nudAmount).EndInit();

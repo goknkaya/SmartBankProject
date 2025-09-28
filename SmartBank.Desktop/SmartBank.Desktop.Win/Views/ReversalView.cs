@@ -28,6 +28,9 @@ namespace SmartBank.Desktop.Win.Views
             WireMenu();
 
             _ = LoadAllAsync();
+
+            dgvRev.SelectionChanged += (_, __) => { FillDetailsFromCurrent(); UpdateVoidButtonState(); };
+            _bindingSource.CurrentChanged += (_, __) => UpdateVoidButtonState();
         }
 
         private void SetupGrid()
@@ -96,6 +99,12 @@ namespace SmartBank.Desktop.Win.Views
             miCreate.Click += async (_, __) => await CreateAsync();
             miVoid.Click += async (_, __) => await VoidAsync();
             miClear.Click += async (_, __) => await ClearAndReloadAsync();
+        }
+
+        private void UpdateVoidButtonState()
+        {
+            var r = _bindingSource.Current as SelectReversalDto;
+            miVoid.Enabled = r != null && string.Equals(r.Status, "S", StringComparison.OrdinalIgnoreCase);
         }
 
         // ---------------- API ----------------
@@ -258,6 +267,7 @@ namespace SmartBank.Desktop.Win.Views
             txtStatus.Text = r.Status ?? "";
             txtDate.Text = r.ReversalDate == default ? "" : r.ReversalDate.ToString("dd.MM.yyyy HH:mm");
             txtReason.Text = r.Reason ?? "";
+            nudAmount.Value = r.ReversedAmount;
             txtPerformedBy.Text = r.PerformedBy ?? "";
             txtSearchId.Text = r.Id.ToString();
             txtSearchTxnId.Text = r.TransactionId.ToString();
@@ -271,13 +281,31 @@ namespace SmartBank.Desktop.Win.Views
             var msg = ex.StatusCode switch
             {
                 400 => body != "" ? body : "Geçersiz istek.",
-                404 => "Kayıt bulunamadı.",
+                404 => "Kayıt bulunamadı veya kayıt bir Void işlem.",
                 409 => body != "" ? body : "İş kuralı ihlali.",
                 500 => "Sunucu hatası.",
                 _ => body != "" ? body : $"İşlem başarısız. Kod: {ex.StatusCode}"
             };
 
             MessageBox.Show(msg, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void dgvRev_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (dgvRev.Rows[e.RowIndex].DataBoundItem is SelectReversalDto r && r.Status != "V")
+            {
+                var name = dgvRev.Columns[e.ColumnIndex].Name;
+                if (name is "colVoidedBy" or "colVoidedAt" or "colVoidReason")
+                    e.Value = ""; // V değilse boş göster
+            }
+        }
+
+        private void ReversalView_Load(object sender, EventArgs e)
+        {
+            if (this.ParentForm != null)
+            {
+                this.ParentForm.Text = "SmartBank Ödeme Sistemleri / Reversal";
+            }
         }
     }
 }

@@ -59,8 +59,15 @@ namespace SmartBank.Api.Controllers
         [HttpGet("tx/{transactionId}")]
         public async Task<IActionResult> GetByTransaction(int transactionId)
         {
-            var items = await _reversalService.GetReversalsByTransactionIdAsync(transactionId);
-            return Ok(items);
+            try
+            {
+                var items = await _reversalService.GetReversalsByTransactionIdAsync(transactionId);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // POST: api/Reversal/{id}/void

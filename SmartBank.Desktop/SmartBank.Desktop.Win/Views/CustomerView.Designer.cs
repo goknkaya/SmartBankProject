@@ -128,7 +128,7 @@
             // 
             split.Panel2.Controls.Add(form);
             split.Size = new Size(726, 419);
-            split.SplitterDistance = 360;
+            split.SplitterDistance = 431;
             split.TabIndex = 1;
             // 
             // grid
@@ -142,7 +142,7 @@
             grid.ReadOnly = true;
             grid.RowHeadersVisible = false;
             grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            grid.Size = new Size(360, 419);
+            grid.Size = new Size(431, 419);
             grid.TabIndex = 0;
             // 
             // form
@@ -186,46 +186,46 @@
             form.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
             form.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
             form.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
-            form.Size = new Size(362, 419);
+            form.Size = new Size(288, 419);
             form.TabIndex = 0;
             // 
             // txtPhone
             // 
             txtPhone.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtPhone.Location = new Point(150, 174);
+            txtPhone.Location = new Point(121, 174);
             txtPhone.Name = "txtPhone";
-            txtPhone.Size = new Size(198, 23);
+            txtPhone.Size = new Size(153, 23);
             txtPhone.TabIndex = 14;
             // 
             // txtEmail
             // 
             txtEmail.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtEmail.Location = new Point(150, 135);
+            txtEmail.Location = new Point(121, 135);
             txtEmail.Name = "txtEmail";
-            txtEmail.Size = new Size(198, 23);
+            txtEmail.Size = new Size(153, 23);
             txtEmail.TabIndex = 13;
             // 
             // txtIdentityNumber
             // 
             txtIdentityNumber.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtIdentityNumber.Location = new Point(150, 96);
+            txtIdentityNumber.Location = new Point(121, 96);
             txtIdentityNumber.Name = "txtIdentityNumber";
-            txtIdentityNumber.Size = new Size(198, 23);
+            txtIdentityNumber.Size = new Size(153, 23);
             txtIdentityNumber.TabIndex = 12;
             // 
             // txtLastName
             // 
             txtLastName.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtLastName.Location = new Point(150, 57);
+            txtLastName.Location = new Point(121, 57);
             txtLastName.Name = "txtLastName";
-            txtLastName.Size = new Size(198, 23);
+            txtLastName.Size = new Size(153, 23);
             txtLastName.TabIndex = 11;
             // 
             // label1
             // 
             label1.Anchor = AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(118, 22);
+            label1.Location = new Point(89, 22);
             label1.Name = "label1";
             label1.Size = new Size(25, 15);
             label1.TabIndex = 0;
@@ -235,7 +235,7 @@
             // 
             label2.Anchor = AnchorStyles.Right;
             label2.AutoSize = true;
-            label2.Location = new Point(101, 61);
+            label2.Location = new Point(72, 61);
             label2.Name = "label2";
             label2.Size = new Size(42, 15);
             label2.TabIndex = 1;
@@ -245,7 +245,7 @@
             // 
             label3.Anchor = AnchorStyles.Right;
             label3.AutoSize = true;
-            label3.Location = new Point(103, 100);
+            label3.Location = new Point(74, 100);
             label3.Name = "label3";
             label3.Size = new Size(40, 15);
             label3.TabIndex = 2;
@@ -255,7 +255,7 @@
             // 
             label4.Anchor = AnchorStyles.Right;
             label4.AutoSize = true;
-            label4.Location = new Point(104, 139);
+            label4.Location = new Point(75, 139);
             label4.Name = "label4";
             label4.Size = new Size(39, 15);
             label4.TabIndex = 3;
@@ -265,7 +265,7 @@
             // 
             label5.Anchor = AnchorStyles.Right;
             label5.AutoSize = true;
-            label5.Location = new Point(94, 178);
+            label5.Location = new Point(65, 178);
             label5.Name = "label5";
             label5.Size = new Size(49, 15);
             label5.TabIndex = 4;
@@ -275,7 +275,7 @@
             // 
             label6.Anchor = AnchorStyles.Right;
             label6.AutoSize = true;
-            label6.Location = new Point(61, 217);
+            label6.Location = new Point(32, 217);
             label6.Name = "label6";
             label6.Size = new Size(82, 15);
             label6.TabIndex = 5;
@@ -285,7 +285,7 @@
             // 
             label7.Anchor = AnchorStyles.Right;
             label7.AutoSize = true;
-            label7.Location = new Point(91, 256);
+            label7.Location = new Point(62, 256);
             label7.Name = "label7";
             label7.Size = new Size(52, 15);
             label7.TabIndex = 6;
@@ -295,7 +295,7 @@
             // 
             label8.Anchor = AnchorStyles.Right;
             label8.AutoSize = true;
-            label8.Location = new Point(103, 295);
+            label8.Location = new Point(74, 295);
             label8.Name = "label8";
             label8.Size = new Size(40, 15);
             label8.TabIndex = 7;
@@ -305,7 +305,7 @@
             // 
             label9.Anchor = AnchorStyles.Right;
             label9.AutoSize = true;
-            label9.Location = new Point(107, 334);
+            label9.Location = new Point(78, 334);
             label9.Name = "label9";
             label9.Size = new Size(36, 15);
             label9.TabIndex = 8;
@@ -314,41 +314,41 @@
             // txtFirstName
             // 
             txtFirstName.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtFirstName.Location = new Point(150, 18);
+            txtFirstName.Location = new Point(121, 18);
             txtFirstName.Name = "txtFirstName";
-            txtFirstName.Size = new Size(198, 23);
+            txtFirstName.Size = new Size(153, 23);
             txtFirstName.TabIndex = 10;
             // 
             // txtAddress
             // 
             txtAddress.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtAddress.Location = new Point(150, 291);
+            txtAddress.Location = new Point(121, 291);
             txtAddress.Name = "txtAddress";
-            txtAddress.Size = new Size(198, 23);
+            txtAddress.Size = new Size(153, 23);
             txtAddress.TabIndex = 15;
             // 
             // txtCity
             // 
             txtCity.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtCity.Location = new Point(150, 330);
+            txtCity.Location = new Point(121, 330);
             txtCity.Name = "txtCity";
-            txtCity.Size = new Size(198, 23);
+            txtCity.Size = new Size(153, 23);
             txtCity.TabIndex = 16;
             // 
             // txtCountry
             // 
             txtCountry.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            txtCountry.Location = new Point(150, 373);
+            txtCountry.Location = new Point(121, 373);
             txtCountry.Name = "txtCountry";
-            txtCountry.Size = new Size(198, 23);
+            txtCountry.Size = new Size(153, 23);
             txtCountry.TabIndex = 17;
             // 
             // dteBirth
             // 
             dteBirth.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            dteBirth.Location = new Point(150, 213);
+            dteBirth.Location = new Point(121, 213);
             dteBirth.Name = "dteBirth";
-            dteBirth.Size = new Size(198, 23);
+            dteBirth.Size = new Size(153, 23);
             dteBirth.TabIndex = 18;
             // 
             // cmbGender
@@ -356,16 +356,16 @@
             cmbGender.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             cmbGender.FormattingEnabled = true;
             cmbGender.Items.AddRange(new object[] { "Male", "Female", "Other" });
-            cmbGender.Location = new Point(150, 252);
+            cmbGender.Location = new Point(121, 252);
             cmbGender.Name = "cmbGender";
-            cmbGender.Size = new Size(198, 23);
+            cmbGender.Size = new Size(153, 23);
             cmbGender.TabIndex = 19;
             // 
             // label10
             // 
             label10.Anchor = AnchorStyles.Right;
             label10.AutoSize = true;
-            label10.Location = new Point(110, 377);
+            label10.Location = new Point(81, 377);
             label10.Name = "label10";
             label10.Size = new Size(33, 15);
             label10.TabIndex = 9;

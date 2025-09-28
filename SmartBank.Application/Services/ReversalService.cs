@@ -110,11 +110,23 @@ namespace SmartBank.Application.Services
         // 4) GET BY TRANSACTION ID
         public async Task<List<SelectReversalDto>> GetReversalsByTransactionIdAsync(int transactionId)
         {
-            var reversals = await _dbContext.Reversals
-                .Where(r => r.TransactionId == transactionId && r.Status != "V")
+            // Önce tüm reversalları çek (S ve V dahil)
+            var all = await _dbContext.Reversals
+                .Where(r => r.TransactionId == transactionId)
                 .ToListAsync();
 
-            return _mapper.Map<List<SelectReversalDto>>(reversals);
+            // Eğer hiç kayıt yoksa direkt NotFound
+            if (!all.Any())
+                throw new InvalidOperationException("Bu işlem için hiç reversal bulunamadı.");
+
+            // Kullanıcıya sadece S’leri döndür
+            var successOnly = all.Where(r => r.Status != "V").ToList();
+
+            // Eğer S yok ama sadece V varsa hata fırlat
+            if (!successOnly.Any())
+                throw new InvalidOperationException("Bu işlem için reversal var ancak iptal edilmiş durumda.");
+
+            return _mapper.Map<List<SelectReversalDto>>(successOnly);
         }
 
         // 5) VOID (silmek yok; iptal/void)

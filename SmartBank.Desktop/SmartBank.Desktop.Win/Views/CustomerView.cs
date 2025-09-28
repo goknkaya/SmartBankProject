@@ -56,6 +56,9 @@ namespace SmartBank.Desktop.Win.Views
                 new { Text = "Female", Value = "F" },
             };
             cmbGender.SelectedIndex = -1;
+
+            this.Load += (_, __) => UpdateFormTitle();
+            this.VisibleChanged += (_, __) => { if (Visible) UpdateFormTitle(); };
         }
 
         private void Grid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
@@ -362,6 +365,13 @@ namespace SmartBank.Desktop.Win.Views
             City = txtCity.Text.TrimOrNull(),
             Country = txtCountry.Text.TrimOrNull()
         };
+
+        private void UpdateFormTitle()
+        {
+            var f = this.FindForm();
+            if (f != null)
+                f.Text = "SmartBank Ödeme Sistemleri / Customer";
+        }
     }
 
     internal static class StrX
@@ -382,4 +392,5 @@ namespace SmartBank.Desktop.Win.Views
         public string? traceId { get; set; }
         public Dictionary<string, string[]>? errors { get; set; }
     }
+
 }

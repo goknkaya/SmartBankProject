@@ -35,6 +35,9 @@ namespace SmartBank.Desktop.Win.Views
 
             _ = LoadAllAsync();
             _ = LoadCardsAsync();
+
+            this.Load += (_, __) => UpdateFormTitle();
+            this.VisibleChanged += (_, __) => { if (Visible) UpdateFormTitle(); };
         }
 
         // ================== UI INIT ==================
@@ -359,6 +362,13 @@ namespace SmartBank.Desktop.Win.Views
             };
 
             MessageBox.Show(userMsg, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void UpdateFormTitle()
+        {
+            var f = this.FindForm();
+            if (f != null)
+                f.Text = "SmartBank Ödeme Sistemleri / Transaction";
         }
     }
 }

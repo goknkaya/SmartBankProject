@@ -40,18 +40,6 @@
             miCancel = new ToolStripMenuItem();
             splitMain = new SplitContainer();
             dgvCards = new DataGridView();
-            colCustomer = new DataGridViewTextBoxColumn();
-            colCard = new DataGridViewTextBoxColumn();
-            colExpM = new DataGridViewTextBoxColumn();
-            colExpY = new DataGridViewTextBoxColumn();
-            colStatus = new DataGridViewTextBoxColumn();
-            colProvider = new DataGridViewTextBoxColumn();
-            colCardLimit = new DataGridViewTextBoxColumn();
-            colDaily = new DataGridViewTextBoxColumn();
-            colTxn = new DataGridViewTextBoxColumn();
-            colVirtual = new DataGridViewCheckBoxColumn();
-            colContactless = new DataGridViewCheckBoxColumn();
-            colBlocked = new DataGridViewCheckBoxColumn();
             pnlRight = new Panel();
             tlpForm = new TableLayoutPanel();
             cboBank = new ComboBox();
@@ -80,7 +68,6 @@
             lblExpMM = new Label();
             lblCustomer = new Label();
             lblCardNumber = new Label();
-            label13 = new Label();
             cboCustomer = new ComboBox();
             txtCardHolder = new TextBox();
             panel1 = new Panel();
@@ -98,6 +85,19 @@
             cboExpM = new ComboBox();
             cboExpY = new ComboBox();
             label1 = new Label();
+            label13 = new Label();
+            colCustomer = new DataGridViewTextBoxColumn();
+            colCard = new DataGridViewTextBoxColumn();
+            colExpM = new DataGridViewTextBoxColumn();
+            colExpY = new DataGridViewTextBoxColumn();
+            colStatus = new DataGridViewTextBoxColumn();
+            colProvider = new DataGridViewTextBoxColumn();
+            colCardLimit = new DataGridViewTextBoxColumn();
+            colDaily = new DataGridViewTextBoxColumn();
+            colTxn = new DataGridViewTextBoxColumn();
+            colVirtual = new DataGridViewCheckBoxColumn();
+            colContactless = new DataGridViewCheckBoxColumn();
+            colBlocked = new DataGridViewCheckBoxColumn();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitMain).BeginInit();
             splitMain.Panel1.SuspendLayout();
@@ -122,7 +122,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { miList, miInsert, miUpdate, miDelete, miSave, miCancel });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1284, 24);
+            menuStrip1.Size = new Size(1758, 24);
             menuStrip1.TabIndex = 1;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -177,8 +177,8 @@
             // 
             splitMain.Panel2.Controls.Add(pnlRight);
             splitMain.Panel2MinSize = 300;
-            splitMain.Size = new Size(1284, 737);
-            splitMain.SplitterDistance = 600;
+            splitMain.Size = new Size(1758, 737);
+            splitMain.SplitterDistance = 1185;
             splitMain.SplitterWidth = 5;
             splitMain.TabIndex = 3;
             // 
@@ -192,92 +192,8 @@
             dgvCards.MultiSelect = false;
             dgvCards.Name = "dgvCards";
             dgvCards.ReadOnly = true;
-            dgvCards.Size = new Size(600, 737);
+            dgvCards.Size = new Size(1185, 737);
             dgvCards.TabIndex = 0;
-            // 
-            // colCustomer
-            // 
-            colCustomer.HeaderText = "Müşteri";
-            colCustomer.Name = "colCustomer";
-            colCustomer.ReadOnly = true;
-            // 
-            // colCard
-            // 
-            colCard.HeaderText = "Kart";
-            colCard.Name = "colCard";
-            colCard.ReadOnly = true;
-            // 
-            // colExpM
-            // 
-            colExpM.HeaderText = "Son Kull. Ay";
-            colExpM.Name = "colExpM";
-            colExpM.ReadOnly = true;
-            // 
-            // colExpY
-            // 
-            colExpY.HeaderText = "Yıl";
-            colExpY.Name = "colExpY";
-            colExpY.ReadOnly = true;
-            // 
-            // colStatus
-            // 
-            colStatus.HeaderText = "Durum";
-            colStatus.Name = "colStatus";
-            colStatus.ReadOnly = true;
-            // 
-            // colProvider
-            // 
-            colProvider.HeaderText = "Sağlayıcı";
-            colProvider.Name = "colProvider";
-            colProvider.ReadOnly = true;
-            // 
-            // colCardLimit
-            // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle1.Format = "N2";
-            dataGridViewCellStyle1.NullValue = null;
-            colCardLimit.DefaultCellStyle = dataGridViewCellStyle1;
-            colCardLimit.HeaderText = "Limit";
-            colCardLimit.Name = "colCardLimit";
-            colCardLimit.ReadOnly = true;
-            // 
-            // colDaily
-            // 
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle2.Format = "N2";
-            dataGridViewCellStyle2.NullValue = null;
-            colDaily.DefaultCellStyle = dataGridViewCellStyle2;
-            colDaily.HeaderText = "Günlük";
-            colDaily.Name = "colDaily";
-            colDaily.ReadOnly = true;
-            // 
-            // colTxn
-            // 
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle3.Format = "N2";
-            dataGridViewCellStyle3.NullValue = null;
-            colTxn.DefaultCellStyle = dataGridViewCellStyle3;
-            colTxn.HeaderText = "İşlem";
-            colTxn.Name = "colTxn";
-            colTxn.ReadOnly = true;
-            // 
-            // colVirtual
-            // 
-            colVirtual.HeaderText = "Sanal";
-            colVirtual.Name = "colVirtual";
-            colVirtual.ReadOnly = true;
-            // 
-            // colContactless
-            // 
-            colContactless.HeaderText = "Temassız";
-            colContactless.Name = "colContactless";
-            colContactless.ReadOnly = true;
-            // 
-            // colBlocked
-            // 
-            colBlocked.HeaderText = "Blokeli";
-            colBlocked.Name = "colBlocked";
-            colBlocked.ReadOnly = true;
             // 
             // pnlRight
             // 
@@ -286,7 +202,7 @@
             pnlRight.Location = new Point(0, 0);
             pnlRight.Name = "pnlRight";
             pnlRight.Padding = new Padding(8);
-            pnlRight.Size = new Size(679, 737);
+            pnlRight.Size = new Size(568, 737);
             pnlRight.TabIndex = 0;
             // 
             // tlpForm
@@ -320,7 +236,7 @@
             tlpForm.Controls.Add(panel2, 1, 3);
             tlpForm.Controls.Add(label1, 0, 0);
             tlpForm.Controls.Add(label13, 0, 12);
-            tlpForm.Location = new Point(8, 8);
+            tlpForm.Location = new Point(3, 3);
             tlpForm.Name = "tlpForm";
             tlpForm.RowCount = 13;
             tlpForm.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
@@ -337,7 +253,7 @@
             tlpForm.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
             tlpForm.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             tlpForm.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tlpForm.Size = new Size(663, 721);
+            tlpForm.Size = new Size(554, 721);
             tlpForm.TabIndex = 0;
             // 
             // cboBank
@@ -349,7 +265,7 @@
             cboBank.Items.AddRange(new object[] { "Akbank", "Yapı Kredi", "Garanti", "Ziraat", "İşbankası", "QNB Finansbank", "Denizbank", "Halkbank", "Vakıfbank", "TEB", "Türkiye Finans", "ING" });
             cboBank.Location = new Point(123, 408);
             cboBank.Name = "cboBank";
-            cboBank.Size = new Size(537, 23);
+            cboBank.Size = new Size(428, 23);
             cboBank.TabIndex = 27;
             cboBank.ValueMember = "Id";
             // 
@@ -361,7 +277,7 @@
             txtReason.Multiline = true;
             txtReason.Name = "txtReason";
             txtReason.ScrollBars = ScrollBars.Vertical;
-            txtReason.Size = new Size(537, 54);
+            txtReason.Size = new Size(428, 54);
             txtReason.TabIndex = 25;
             // 
             // cboStatus
@@ -372,7 +288,7 @@
             cboStatus.FormattingEnabled = true;
             cboStatus.Location = new Point(123, 288);
             cboStatus.Name = "cboStatus";
-            cboStatus.Size = new Size(537, 23);
+            cboStatus.Size = new Size(428, 23);
             cboStatus.TabIndex = 21;
             cboStatus.ValueMember = "Id";
             // 
@@ -384,7 +300,7 @@
             cboType.FormattingEnabled = true;
             cboType.Location = new Point(123, 248);
             cboType.Name = "cboType";
-            cboType.Size = new Size(537, 23);
+            cboType.Size = new Size(428, 23);
             cboType.TabIndex = 20;
             cboType.ValueMember = "Id";
             // 
@@ -396,7 +312,7 @@
             cboProvider.FormattingEnabled = true;
             cboProvider.Location = new Point(123, 208);
             cboProvider.Name = "cboProvider";
-            cboProvider.Size = new Size(537, 23);
+            cboProvider.Size = new Size(428, 23);
             cboProvider.TabIndex = 19;
             cboProvider.ValueMember = "Id";
             // 
@@ -408,7 +324,7 @@
             cboCurrency.FormattingEnabled = true;
             cboCurrency.Location = new Point(123, 168);
             cboCurrency.Name = "cboCurrency";
-            cboCurrency.Size = new Size(537, 23);
+            cboCurrency.Size = new Size(428, 23);
             cboCurrency.TabIndex = 18;
             cboCurrency.ValueMember = "Id";
             // 
@@ -418,7 +334,7 @@
             txtCardNumber.Location = new Point(123, 88);
             txtCardNumber.MaxLength = 16;
             txtCardNumber.Name = "txtCardNumber";
-            txtCardNumber.Size = new Size(537, 23);
+            txtCardNumber.Size = new Size(428, 23);
             txtCardNumber.TabIndex = 16;
             // 
             // label2
@@ -545,23 +461,23 @@
             pnlPreview.Controls.Add(lblCardNumber);
             pnlPreview.Location = new Point(123, 503);
             pnlPreview.Name = "pnlPreview";
-            pnlPreview.Size = new Size(537, 215);
+            pnlPreview.Size = new Size(428, 215);
             pnlPreview.TabIndex = 0;
             // 
             // pbBank
             // 
-            pbBank.Location = new Point(310, 12);
+            pbBank.Location = new Point(292, 12);
             pbBank.Name = "pbBank";
-            pbBank.Size = new Size(208, 89);
+            pbBank.Size = new Size(128, 89);
             pbBank.SizeMode = PictureBoxSizeMode.StretchImage;
             pbBank.TabIndex = 10;
             pbBank.TabStop = false;
             // 
             // pbBrand
             // 
-            pbBrand.Location = new Point(310, 110);
+            pbBrand.Location = new Point(292, 107);
             pbBrand.Name = "pbBrand";
-            pbBrand.Size = new Size(208, 89);
+            pbBrand.Size = new Size(128, 89);
             pbBrand.SizeMode = PictureBoxSizeMode.StretchImage;
             pbBrand.TabIndex = 9;
             pbBrand.TabStop = false;
@@ -621,16 +537,6 @@
             lblCardNumber.TabIndex = 4;
             lblCardNumber.Text = "#### #### #### ####";
             // 
-            // label13
-            // 
-            label13.Anchor = AnchorStyles.Right;
-            label13.AutoSize = true;
-            label13.Location = new Point(57, 603);
-            label13.Name = "label13";
-            label13.Size = new Size(60, 15);
-            label13.TabIndex = 13;
-            label13.Text = "Önizleme:";
-            // 
             // cboCustomer
             // 
             cboCustomer.Anchor = AnchorStyles.Left | AnchorStyles.Right;
@@ -639,7 +545,7 @@
             cboCustomer.FormattingEnabled = true;
             cboCustomer.Location = new Point(123, 8);
             cboCustomer.Name = "cboCustomer";
-            cboCustomer.Size = new Size(537, 23);
+            cboCustomer.Size = new Size(428, 23);
             cboCustomer.TabIndex = 14;
             cboCustomer.ValueMember = "Id";
             // 
@@ -649,7 +555,7 @@
             txtCardHolder.Location = new Point(123, 48);
             txtCardHolder.MaxLength = 50;
             txtCardHolder.Name = "txtCardHolder";
-            txtCardHolder.Size = new Size(537, 23);
+            txtCardHolder.Size = new Size(428, 23);
             txtCardHolder.TabIndex = 15;
             // 
             // panel1
@@ -663,7 +569,7 @@
             panel1.Dock = DockStyle.Fill;
             panel1.Location = new Point(123, 323);
             panel1.Name = "panel1";
-            panel1.Size = new Size(537, 34);
+            panel1.Size = new Size(428, 34);
             panel1.TabIndex = 22;
             // 
             // label16
@@ -703,7 +609,7 @@
             numTxnLimit.Location = new Point(425, 7);
             numTxnLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
             numTxnLimit.Name = "numTxnLimit";
-            numTxnLimit.Size = new Size(109, 23);
+            numTxnLimit.Size = new Size(0, 23);
             numTxnLimit.TabIndex = 2;
             numTxnLimit.ThousandsSeparator = true;
             // 
@@ -714,7 +620,7 @@
             numDailyLimit.Location = new Point(240, 7);
             numDailyLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
             numDailyLimit.Name = "numDailyLimit";
-            numDailyLimit.Size = new Size(109, 23);
+            numDailyLimit.Size = new Size(0, 23);
             numDailyLimit.TabIndex = 1;
             numDailyLimit.ThousandsSeparator = true;
             // 
@@ -725,7 +631,7 @@
             numCardLimit.Location = new Point(40, 7);
             numCardLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
             numCardLimit.Name = "numCardLimit";
-            numCardLimit.Size = new Size(109, 23);
+            numCardLimit.Size = new Size(0, 23);
             numCardLimit.TabIndex = 0;
             numCardLimit.ThousandsSeparator = true;
             // 
@@ -737,7 +643,7 @@
             pnlFlags.Dock = DockStyle.Fill;
             pnlFlags.Location = new Point(123, 363);
             pnlFlags.Name = "pnlFlags";
-            pnlFlags.Size = new Size(537, 34);
+            pnlFlags.Size = new Size(428, 34);
             pnlFlags.TabIndex = 23;
             // 
             // chkBlocked
@@ -780,7 +686,7 @@
             panel2.Controls.Add(cboExpY);
             panel2.Location = new Point(123, 123);
             panel2.Name = "panel2";
-            panel2.Size = new Size(537, 34);
+            panel2.Size = new Size(428, 34);
             panel2.TabIndex = 26;
             // 
             // cboExpM
@@ -817,6 +723,112 @@
             label1.TabIndex = 1;
             label1.Text = "Müşteri:";
             // 
+            // label13
+            // 
+            label13.Anchor = AnchorStyles.Right;
+            label13.AutoSize = true;
+            label13.Location = new Point(57, 603);
+            label13.Name = "label13";
+            label13.Size = new Size(60, 15);
+            label13.TabIndex = 13;
+            label13.Text = "Önizleme:";
+            // 
+            // colCustomer
+            // 
+            colCustomer.FillWeight = 90F;
+            colCustomer.HeaderText = "Müşteri";
+            colCustomer.Name = "colCustomer";
+            colCustomer.ReadOnly = true;
+            // 
+            // colCard
+            // 
+            colCard.FillWeight = 150F;
+            colCard.HeaderText = "Kart";
+            colCard.Name = "colCard";
+            colCard.ReadOnly = true;
+            // 
+            // colExpM
+            // 
+            colExpM.FillWeight = 42.63958F;
+            colExpM.HeaderText = "Son Kull. Ay";
+            colExpM.Name = "colExpM";
+            colExpM.ReadOnly = true;
+            // 
+            // colExpY
+            // 
+            colExpY.FillWeight = 42.63958F;
+            colExpY.HeaderText = "Yıl";
+            colExpY.Name = "colExpY";
+            colExpY.ReadOnly = true;
+            // 
+            // colStatus
+            // 
+            colStatus.FillWeight = 42.63958F;
+            colStatus.HeaderText = "Durum";
+            colStatus.Name = "colStatus";
+            colStatus.ReadOnly = true;
+            // 
+            // colProvider
+            // 
+            colProvider.FillWeight = 42.63958F;
+            colProvider.HeaderText = "Sağlayıcı";
+            colProvider.Name = "colProvider";
+            colProvider.ReadOnly = true;
+            // 
+            // colCardLimit
+            // 
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle1.Format = "N2";
+            dataGridViewCellStyle1.NullValue = null;
+            colCardLimit.DefaultCellStyle = dataGridViewCellStyle1;
+            colCardLimit.FillWeight = 42.63958F;
+            colCardLimit.HeaderText = "Limit";
+            colCardLimit.Name = "colCardLimit";
+            colCardLimit.ReadOnly = true;
+            // 
+            // colDaily
+            // 
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle2.Format = "N2";
+            dataGridViewCellStyle2.NullValue = null;
+            colDaily.DefaultCellStyle = dataGridViewCellStyle2;
+            colDaily.FillWeight = 42.63958F;
+            colDaily.HeaderText = "Günlük";
+            colDaily.Name = "colDaily";
+            colDaily.ReadOnly = true;
+            // 
+            // colTxn
+            // 
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle3.Format = "N2";
+            dataGridViewCellStyle3.NullValue = null;
+            colTxn.DefaultCellStyle = dataGridViewCellStyle3;
+            colTxn.FillWeight = 42.63958F;
+            colTxn.HeaderText = "İşlem";
+            colTxn.Name = "colTxn";
+            colTxn.ReadOnly = true;
+            // 
+            // colVirtual
+            // 
+            colVirtual.FillWeight = 42.63958F;
+            colVirtual.HeaderText = "Sanal";
+            colVirtual.Name = "colVirtual";
+            colVirtual.ReadOnly = true;
+            // 
+            // colContactless
+            // 
+            colContactless.FillWeight = 42.63958F;
+            colContactless.HeaderText = "Temassız";
+            colContactless.Name = "colContactless";
+            colContactless.ReadOnly = true;
+            // 
+            // colBlocked
+            // 
+            colBlocked.FillWeight = 42.63958F;
+            colBlocked.HeaderText = "Blokeli";
+            colBlocked.Name = "colBlocked";
+            colBlocked.ReadOnly = true;
+            // 
             // CardView
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -824,7 +836,7 @@
             Controls.Add(splitMain);
             Controls.Add(menuStrip1);
             Name = "CardView";
-            Size = new Size(1284, 761);
+            Size = new Size(1758, 761);
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             splitMain.Panel1.ResumeLayout(false);
@@ -877,18 +889,6 @@
         private Label label11;
         private Label label12;
         private Label label13;
-        private DataGridViewTextBoxColumn colCustomer;
-        private DataGridViewTextBoxColumn colCard;
-        private DataGridViewTextBoxColumn colExpM;
-        private DataGridViewTextBoxColumn colExpY;
-        private DataGridViewTextBoxColumn colStatus;
-        private DataGridViewTextBoxColumn colProvider;
-        private DataGridViewTextBoxColumn colCardLimit;
-        private DataGridViewTextBoxColumn colDaily;
-        private DataGridViewTextBoxColumn colTxn;
-        private DataGridViewCheckBoxColumn colVirtual;
-        private DataGridViewCheckBoxColumn colContactless;
-        private DataGridViewCheckBoxColumn colBlocked;
         private TextBox txtCardNumber;
         private ComboBox cboCustomer;
         private TextBox txtCardHolder;
@@ -919,5 +919,17 @@
         private PictureBox pbBrand;
         private ComboBox cboBank;
         private PictureBox pbBank;
+        private DataGridViewTextBoxColumn colCustomer;
+        private DataGridViewTextBoxColumn colCard;
+        private DataGridViewTextBoxColumn colExpM;
+        private DataGridViewTextBoxColumn colExpY;
+        private DataGridViewTextBoxColumn colStatus;
+        private DataGridViewTextBoxColumn colProvider;
+        private DataGridViewTextBoxColumn colCardLimit;
+        private DataGridViewTextBoxColumn colDaily;
+        private DataGridViewTextBoxColumn colTxn;
+        private DataGridViewCheckBoxColumn colVirtual;
+        private DataGridViewCheckBoxColumn colContactless;
+        private DataGridViewCheckBoxColumn colBlocked;
     }
 }
