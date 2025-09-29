@@ -12,9 +12,8 @@ namespace SmartBank.Api.Controllers
         public ClearingController(IClearingService svc) => _svc = svc;
 
         // 1) IN dosyası yükle (multipart/form-data)
-        [HttpPost("incoming")]
-        [Consumes("multipart/form-data")]
-        [ProducesResponseType(typeof(SelectClearingBatchDto), 200)]
+        [HttpPost("in")]
+        [RequestSizeLimit(200_000_000)]
         public async Task<IActionResult> UploadIncoming([FromForm] IncomingUploadRequest req)
         {
             if (req.File == null || req.File.Length == 0) return BadRequest("Dosya boş.");

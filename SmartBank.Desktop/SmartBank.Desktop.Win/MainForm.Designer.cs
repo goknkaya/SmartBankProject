@@ -125,6 +125,7 @@
             btnClearing.Text = "Clearing";
             btnClearing.TextAlign = ContentAlignment.MiddleLeft;
             btnClearing.UseVisualStyleBackColor = true;
+            btnClearing.Click += btnClearing_Click;
             // 
             // btnReversal
             // 

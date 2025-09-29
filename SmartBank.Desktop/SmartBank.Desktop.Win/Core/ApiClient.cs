@@ -6,11 +6,11 @@ using System.Text.Json;
 namespace SmartBank.Desktop.Win.Core
 {
     /// <summary>
-    /// Tek noktadan HTTP çağrıları + login.
+    /// HTTP çağrıları, login ve ortak hata işleme için tek nokta.
     /// </summary>
     public sealed class ApiClient
     {
-        // Sonda / olması önemli (relative path'ler birleşsin)
+        // Relative path birleşimi için sonda '/' olmalı
         private const string BaseUrl = "https://localhost:7244/";
 
         private static readonly JsonSerializerOptions _json = new()
@@ -27,7 +27,7 @@ namespace SmartBank.Desktop.Win.Core
             var handler = new HttpClientHandler
             {
 #if DEBUG
-                // Geliştirmede self-signed sertifika
+                // Geliştirme ortamında self-signed sertifikayı kabul et
                 ServerCertificateCustomValidationCallback =
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 #endif
@@ -43,6 +43,10 @@ namespace SmartBank.Desktop.Win.Core
             _http.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
         }
+
+        // ---- Dışarıya faydalı birkaç readonly bilgi
+        public Uri BaseAddress => _http.BaseAddress!;
+        public HttpRequestHeaders DefaultHeaders => _http.DefaultRequestHeaders;
 
         // =========================
         // AUTH
@@ -65,21 +69,19 @@ namespace SmartBank.Desktop.Win.Core
             if (!res.IsSuccessStatusCode)
                 ThrowApi(body, (int)res.StatusCode, req.Method, req.RequestUri?.ToString());
 
-            // Login yanıtı JSON: { token, role, expiresAt } (senin API'ye uygun)
+            // API'nin döndüğü yapıya göre; sende zaten var
             var dto = JsonSerializer.Deserialize<LoginResponseDto>(body, _json)
                       ?? throw new ApiException((int)res.StatusCode, body, "Boş login yanıtı.");
 
             if (string.IsNullOrWhiteSpace(dto.Token))
                 throw new ApiException((int)res.StatusCode, body, "Token boş döndü.");
 
-            // AuthContext'e güvenli şekilde yaz (Set veya SetToken hangisi varsa)
             TrySetAuthContext(dto);
-
             return true;
         }
 
         // =========================
-        // GENERIC HELPERS
+        // GENERIC HELPERS (JSON)
         // =========================
         public async Task<T?> GetAsync<T>(string path, bool withAuth = true)
         {
@@ -92,8 +94,9 @@ namespace SmartBank.Desktop.Win.Core
             if (!res.IsSuccessStatusCode)
                 ThrowApi(body, (int)res.StatusCode, req.Method, req.RequestUri?.ToString());
 
-            if (string.IsNullOrWhiteSpace(body)) return default;
-            return JsonSerializer.Deserialize<T>(body, _json);
+            return string.IsNullOrWhiteSpace(body)
+                ? default
+                : JsonSerializer.Deserialize<T>(body, _json);
         }
 
         public async Task<TResponse?> PostAsync<TRequest, TResponse>(string path, TRequest data, bool withAuth = true)
@@ -110,8 +113,9 @@ namespace SmartBank.Desktop.Win.Core
             if (!res.IsSuccessStatusCode)
                 ThrowApi(body, (int)res.StatusCode, req.Method, req.RequestUri?.ToString());
 
-            if (string.IsNullOrWhiteSpace(body)) return default;
-            return JsonSerializer.Deserialize<TResponse>(body, _json);
+            return string.IsNullOrWhiteSpace(body)
+                ? default
+                : JsonSerializer.Deserialize<TResponse>(body, _json);
         }
 
         public async Task<TResponse?> PutAsync<TRequest, TResponse>(string path, TRequest data, bool withAuth = true)
@@ -128,8 +132,9 @@ namespace SmartBank.Desktop.Win.Core
             if (!res.IsSuccessStatusCode)
                 ThrowApi(body, (int)res.StatusCode, req.Method, req.RequestUri?.ToString());
 
-            if (string.IsNullOrWhiteSpace(body)) return default;
-            return JsonSerializer.Deserialize<TResponse>(body, _json);
+            return string.IsNullOrWhiteSpace(body)
+                ? default
+                : JsonSerializer.Deserialize<TResponse>(body, _json);
         }
 
         public async Task DeleteAsync(string path, bool withAuth = true)
@@ -142,6 +147,64 @@ namespace SmartBank.Desktop.Win.Core
 
             if (!res.IsSuccessStatusCode)
                 ThrowApi(body, (int)res.StatusCode, req.Method, req.RequestUri?.ToString());
+        }
+
+        // =========================
+        // MULTIPART (dosya upload)
+        // =========================
+
+        /// <summary>
+        /// Diskteki bir dosyayı multipart/form-data ile gönderir.
+        /// </summary>
+        public async Task<TResponse?> PostMultipartAsync<TResponse>(
+            string path,
+            Dictionary<string, string> fields,
+            string fileFieldName,
+            string filePath,
+            bool withAuth = true)
+        {
+            await using var fs = File.OpenRead(filePath);
+            var fileName = Path.GetFileName(filePath);
+            return await PostMultipartAsync<TResponse>(path, fields, fileFieldName, fs, fileName, withAuth);
+        }
+
+        /// <summary>
+        /// Bellekteki bir stream'i (ör. OpenFileDialog'dan) multipart/form-data ile gönderir.
+        /// </summary>
+        public async Task<TResponse?> PostMultipartAsync<TResponse>(
+            string path,
+            Dictionary<string, string> fields,
+            string fileFieldName,
+            Stream fileStream,
+            string fileName,
+            bool withAuth = true)
+        {
+            using var form = new MultipartFormDataContent();
+
+            // Text alanları
+            if (fields != null)
+            {
+                foreach (var kv in fields)
+                    form.Add(new StringContent(kv.Value ?? ""), kv.Key);
+            }
+
+            // Dosya içeriği
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+            form.Add(fileContent, fileFieldName, fileName);
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, path) { Content = form };
+            AddAuth(req, withAuth);
+
+            using var res = await _http.SendAsync(req);
+            var body = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+                ThrowApi(body, (int)res.StatusCode, req.Method, req.RequestUri?.ToString());
+
+            return string.IsNullOrWhiteSpace(body)
+                ? default
+                : JsonSerializer.Deserialize<TResponse>(body, _json);
         }
 
         // =========================
@@ -176,10 +239,8 @@ namespace SmartBank.Desktop.Win.Core
                         {
                             var lines = new List<string>();
                             foreach (var kv in pd.Errors)
-                            {
                                 foreach (var msg in kv.Value ?? Array.Empty<string>())
                                     lines.Add($"{kv.Key}: {msg}");
-                            }
                             if (lines.Count > 0)
                                 return string.Join(Environment.NewLine, lines);
                         }
@@ -191,15 +252,15 @@ namespace SmartBank.Desktop.Win.Core
             }
             catch
             {
-                // Body JSON değilse sessizce geç
+                // Yanıt gövdesi JSON değilse sessiz geç
             }
 
             return $"{method} {url} -> {status}";
         }
 
         /// <summary>
-        /// AuthContext.Set(token, role, expiresAt) ya da AuthContext.SetToken(token, expiresAt)
-        /// hangisi varsa onu reflection ile çağırır (compile-time hatayı önler).
+        /// AuthContext.Set(...) veya SetToken(...) varyantlarını reflection ile çağırır.
+        /// (Projendeki AuthContext şekline uyumlu olması için.)
         /// </summary>
         private static void TrySetAuthContext(LoginResponseDto dto)
         {
@@ -217,7 +278,7 @@ namespace SmartBank.Desktop.Win.Core
                     var args = pars.Length switch
                     {
                         3 => new object?[] { dto.Token, dto.Role, expires },
-                        2 => new object?[] { dto.Token, dto.Role },
+                        2 => new object?[] { dto.Token, dto.Role }, 
                         _ => null
                     };
                     if (args != null) { mSet.Invoke(null, args); return; }
@@ -240,7 +301,7 @@ namespace SmartBank.Desktop.Win.Core
                 if (args != null) { mSetToken.Invoke(null, args); return; }
             }
 
-            // Hiçbiri yoksa minimum: sadece statik alanlar varsa onları set etmeyi dene
+            // Hiçbiri yoksa minimum fallback
             try
             {
                 t.GetProperty("Token")?.SetValue(null, dto.Token);
@@ -251,7 +312,10 @@ namespace SmartBank.Desktop.Win.Core
             catch { /* yoksay */ }
         }
     }
-    /// <summary>RFC7807 + FluentValidation gövdesi.</summary>
+
+    /// <summary>
+    /// RFC7807 + FluentValidation uyumlu problem detayları.
+    /// </summary>
     public sealed class ProblemDetailsDto
     {
         public string? Type { get; set; }
