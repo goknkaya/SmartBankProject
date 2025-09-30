@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -9,18 +10,17 @@ using SmartBank.Application.Interfaces;
 using SmartBank.Application.MappingProfiles;
 using SmartBank.Application.Services;
 using SmartBank.Application.Validators.Switch;
-// SmartBank
 using SmartBank.Infrastructure.Persistence;
 using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---- DB
+// DB
 builder.Services.AddDbContext<CustomerCoreDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ---- AutoMapper & FluentValidation
+// AutoMapper & FluentValidation
 builder.Services.AddAutoMapper(typeof(ClearingProfile).Assembly);
 builder.Services.AddFluentValidationAutoValidation()
                 .AddFluentValidationClientsideAdapters();
@@ -29,7 +29,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidato
 builder.Services.AddAutoMapper(typeof(ReversalProfile).Assembly);
 builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
 
-// ---- Services (DI)
+// DI
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
@@ -38,17 +38,17 @@ builder.Services.AddScoped<IChargebackService, ChargebackService>();
 builder.Services.AddScoped<IClearingService, ClearingService>();
 builder.Services.AddScoped<ISwitchService, SwitchService>();
 
-// ---- Controllers + JSON
+// Controllers + JSON
 builder.Services.AddControllers().AddJsonOptions(o =>
 {
     o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
-// ---- JWT
+// JWT
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
-var jwtKey = builder.Configuration["Jwt:Key"]; // appsettings veya user-secrets
+var jwtKey = builder.Configuration["Jwt:Key"];
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -68,7 +68,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// ---- Swagger
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -76,7 +76,6 @@ builder.Services.AddSwaggerGen(c =>
     c.CustomSchemaIds(t => t.FullName);
     c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
 
-    // JWT butonu
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -94,25 +93,58 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ---- Swagger JSON & UI (ANONİM)
-app.MapSwagger().AllowAnonymous(); // /swagger/v1/swagger.json
+// *** Dev exception page KAPALI olsun (yoksa stack trace döner). ***
+// if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
+
+// === GLOBAL EXCEPTION HANDLER (sadece kısa, düz metin) ===
+app.UseExceptionHandler(config =>
+{
+    config.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        var ex = feature?.Error;
+
+        // Varsayılanlar
+        var status = 500;
+        var message = "Sunucu hatası.";
+
+        if (ex != null)
+        {
+            // Tip bazlı sade eşleme (istersen genişlet)
+            message = ex.Message;
+            status = ex switch
+            {
+                FluentValidation.ValidationException => 400,
+                InvalidOperationException => 409,      // çakışma/kural ihlali
+                ApplicationException => 400,           // iş kuralı
+                _ => 500
+            };
+        }
+
+        context.Response.StatusCode = status;
+        context.Response.ContentType = "text/plain; charset=utf-8";
+        await context.Response.WriteAsync(message);
+    });
+});
+
+// Swagger ANONİM
+app.MapSwagger().AllowAnonymous();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBank API v1");
-    c.RoutePrefix = "swagger"; // https://localhost:xxxx/swagger
+    c.RoutePrefix = "swagger";
 });
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ---- Anonim yardımcı uçlar
+// Anonim yardımcı uçlar
 app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous();
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.Now })).AllowAnonymous();
 
-// ---- TÜM CONTROLLER’LAR JWT İSTER
-// Login gibi istisnalar için aksiyona [AllowAnonymous] ekle (örn. AuthController.Login).
+// Tüm controller’lar JWT ister
 app.MapControllers().RequireAuthorization();
 
 app.Run();

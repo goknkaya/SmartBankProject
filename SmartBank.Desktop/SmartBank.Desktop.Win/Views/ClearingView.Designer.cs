@@ -30,6 +30,15 @@
         {
             splitContainer1 = new SplitContainer();
             dgvBatches = new DataGridView();
+            btnRetryUnmatched = new Button();
+            btnRefreshBatches = new Button();
+            btnGenerateOut = new Button();
+            btnUploadIn = new Button();
+            dtpSettlement = new DateTimePicker();
+            cboDirection = new ComboBox();
+            dgvRecords = new DataGridView();
+            btnRefreshRecords = new Button();
+            btnRetrySelected = new Button();
             colB_BatchId = new DataGridViewTextBoxColumn();
             colB_Direction = new DataGridViewTextBoxColumn();
             colB_FileName = new DataGridViewTextBoxColumn();
@@ -42,13 +51,6 @@
             colB_CreatedAt = new DataGridViewTextBoxColumn();
             colB_ProcessedAt = new DataGridViewTextBoxColumn();
             colB_Notes = new DataGridViewTextBoxColumn();
-            btnRetryUnmatched = new Button();
-            btnRefreshBatches = new Button();
-            btnGenerateOut = new Button();
-            btnUploadIn = new Button();
-            dtpSettlement = new DateTimePicker();
-            cboDirection = new ComboBox();
-            dgvRecords = new DataGridView();
             colR_RecordId = new DataGridViewTextBoxColumn();
             colR_LineNumber = new DataGridViewTextBoxColumn();
             colR_TransactionId = new DataGridViewTextBoxColumn();
@@ -61,8 +63,6 @@
             colR_MatchStatus = new DataGridViewTextBoxColumn();
             colR_ErrorMessage = new DataGridViewTextBoxColumn();
             colR_CreatedAt = new DataGridViewTextBoxColumn();
-            btnRefreshRecords = new Button();
-            btnRetrySelected = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -93,7 +93,7 @@
             splitContainer1.Panel2.Controls.Add(dgvRecords);
             splitContainer1.Panel2.Controls.Add(btnRefreshRecords);
             splitContainer1.Panel2.Controls.Add(btnRetrySelected);
-            splitContainer1.Size = new Size(1267, 603);
+            splitContainer1.Size = new Size(1330, 603);
             splitContainer1.SplitterDistance = 280;
             splitContainer1.TabIndex = 0;
             // 
@@ -101,10 +101,91 @@
             // 
             dgvBatches.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvBatches.Columns.AddRange(new DataGridViewColumn[] { colB_BatchId, colB_Direction, colB_FileName, colB_FileHash, colB_SettlementDate, colB_Status, colB_TotalCount, colB_SuccessCount, colB_FailCount, colB_CreatedAt, colB_ProcessedAt, colB_Notes });
-            dgvBatches.Location = new Point(12, 83);
+            dgvBatches.Dock = DockStyle.Bottom;
+            dgvBatches.Location = new Point(0, 91);
             dgvBatches.Name = "dgvBatches";
-            dgvBatches.Size = new Size(1244, 189);
+            dgvBatches.Size = new Size(1330, 189);
             dgvBatches.TabIndex = 6;
+            // 
+            // btnRetryUnmatched
+            // 
+            btnRetryUnmatched.Location = new Point(430, 50);
+            btnRetryUnmatched.Name = "btnRetryUnmatched";
+            btnRetryUnmatched.Size = new Size(177, 23);
+            btnRetryUnmatched.TabIndex = 5;
+            btnRetryUnmatched.Text = "Eşleşmeyenleri Yeniden Dene";
+            btnRetryUnmatched.UseVisualStyleBackColor = true;
+            // 
+            // btnRefreshBatches
+            // 
+            btnRefreshBatches.Location = new Point(252, 50);
+            btnRefreshBatches.Name = "btnRefreshBatches";
+            btnRefreshBatches.Size = new Size(177, 23);
+            btnRefreshBatches.TabIndex = 4;
+            btnRefreshBatches.Text = "Batch Listesini Yenile";
+            btnRefreshBatches.UseVisualStyleBackColor = true;
+            // 
+            // btnGenerateOut
+            // 
+            btnGenerateOut.Location = new Point(430, 19);
+            btnGenerateOut.Name = "btnGenerateOut";
+            btnGenerateOut.Size = new Size(177, 23);
+            btnGenerateOut.TabIndex = 3;
+            btnGenerateOut.Text = "OUT Dosyası Oluştur";
+            btnGenerateOut.UseVisualStyleBackColor = true;
+            // 
+            // btnUploadIn
+            // 
+            btnUploadIn.Location = new Point(252, 19);
+            btnUploadIn.Name = "btnUploadIn";
+            btnUploadIn.Size = new Size(177, 23);
+            btnUploadIn.TabIndex = 2;
+            btnUploadIn.Text = "IN Dosyası Yükle";
+            btnUploadIn.UseVisualStyleBackColor = true;
+            // 
+            // dtpSettlement
+            // 
+            dtpSettlement.Location = new Point(29, 48);
+            dtpSettlement.Name = "dtpSettlement";
+            dtpSettlement.Size = new Size(196, 23);
+            dtpSettlement.TabIndex = 1;
+            // 
+            // cboDirection
+            // 
+            cboDirection.FormattingEnabled = true;
+            cboDirection.Items.AddRange(new object[] { "IN", "OUT" });
+            cboDirection.Location = new Point(29, 19);
+            cboDirection.Name = "cboDirection";
+            cboDirection.Size = new Size(196, 23);
+            cboDirection.TabIndex = 0;
+            // 
+            // dgvRecords
+            // 
+            dgvRecords.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvRecords.Columns.AddRange(new DataGridViewColumn[] { colR_RecordId, colR_LineNumber, colR_TransactionId, colR_CardId, colR_CardLast4, colR_Amount, colR_Currency, colR_TransactionDate, colR_MerchantName, colR_MatchStatus, colR_ErrorMessage, colR_CreatedAt });
+            dgvRecords.Dock = DockStyle.Bottom;
+            dgvRecords.Location = new Point(0, 58);
+            dgvRecords.Name = "dgvRecords";
+            dgvRecords.Size = new Size(1330, 261);
+            dgvRecords.TabIndex = 7;
+            // 
+            // btnRefreshRecords
+            // 
+            btnRefreshRecords.Location = new Point(252, 12);
+            btnRefreshRecords.Name = "btnRefreshRecords";
+            btnRefreshRecords.Size = new Size(177, 23);
+            btnRefreshRecords.TabIndex = 7;
+            btnRefreshRecords.Text = "Kayıtları Yenile";
+            btnRefreshRecords.UseVisualStyleBackColor = true;
+            // 
+            // btnRetrySelected
+            // 
+            btnRetrySelected.Location = new Point(430, 12);
+            btnRetrySelected.Name = "btnRetrySelected";
+            btnRetrySelected.Size = new Size(177, 23);
+            btnRetrySelected.TabIndex = 8;
+            btnRetrySelected.Text = "Seçiliyi Yeniden Dene";
+            btnRetrySelected.UseVisualStyleBackColor = true;
             // 
             // colB_BatchId
             // 
@@ -163,69 +244,9 @@
             // 
             // colB_Notes
             // 
+            colB_Notes.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             colB_Notes.HeaderText = "Notlar";
             colB_Notes.Name = "colB_Notes";
-            // 
-            // btnRetryUnmatched
-            // 
-            btnRetryUnmatched.Location = new Point(430, 50);
-            btnRetryUnmatched.Name = "btnRetryUnmatched";
-            btnRetryUnmatched.Size = new Size(177, 23);
-            btnRetryUnmatched.TabIndex = 5;
-            btnRetryUnmatched.Text = "Eşleşmeyenleri Yeniden Dene";
-            btnRetryUnmatched.UseVisualStyleBackColor = true;
-            // 
-            // btnRefreshBatches
-            // 
-            btnRefreshBatches.Location = new Point(252, 50);
-            btnRefreshBatches.Name = "btnRefreshBatches";
-            btnRefreshBatches.Size = new Size(177, 23);
-            btnRefreshBatches.TabIndex = 4;
-            btnRefreshBatches.Text = "Batch Listesini Yenile";
-            btnRefreshBatches.UseVisualStyleBackColor = true;
-            // 
-            // btnGenerateOut
-            // 
-            btnGenerateOut.Location = new Point(430, 19);
-            btnGenerateOut.Name = "btnGenerateOut";
-            btnGenerateOut.Size = new Size(177, 23);
-            btnGenerateOut.TabIndex = 3;
-            btnGenerateOut.Text = "OUT Dosyası Oluştur";
-            btnGenerateOut.UseVisualStyleBackColor = true;
-            // 
-            // btnUploadIn
-            // 
-            btnUploadIn.Location = new Point(252, 19);
-            btnUploadIn.Name = "btnUploadIn";
-            btnUploadIn.Size = new Size(177, 23);
-            btnUploadIn.TabIndex = 2;
-            btnUploadIn.Text = "IN Dosyası Yükle";
-            btnUploadIn.UseVisualStyleBackColor = true;
-            // 
-            // dtpSettlement
-            // 
-            dtpSettlement.Location = new Point(29, 48);
-            dtpSettlement.Name = "dtpSettlement";
-            dtpSettlement.Size = new Size(196, 23);
-            dtpSettlement.TabIndex = 1;
-            // 
-            // cboDirection
-            // 
-            cboDirection.FormattingEnabled = true;
-            cboDirection.Items.AddRange(new object[] { "IN", "OUT" });
-            cboDirection.Location = new Point(29, 19);
-            cboDirection.Name = "cboDirection";
-            cboDirection.Size = new Size(196, 23);
-            cboDirection.TabIndex = 0;
-            // 
-            // dgvRecords
-            // 
-            dgvRecords.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvRecords.Columns.AddRange(new DataGridViewColumn[] { colR_RecordId, colR_LineNumber, colR_TransactionId, colR_CardId, colR_CardLast4, colR_Amount, colR_Currency, colR_TransactionDate, colR_MerchantName, colR_MatchStatus, colR_ErrorMessage, colR_CreatedAt });
-            dgvRecords.Location = new Point(12, 41);
-            dgvRecords.Name = "dgvRecords";
-            dgvRecords.Size = new Size(1244, 261);
-            dgvRecords.TabIndex = 7;
             // 
             // colR_RecordId
             // 
@@ -284,26 +305,9 @@
             // 
             // colR_CreatedAt
             // 
+            colR_CreatedAt.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             colR_CreatedAt.HeaderText = "Oluşturulma";
             colR_CreatedAt.Name = "colR_CreatedAt";
-            // 
-            // btnRefreshRecords
-            // 
-            btnRefreshRecords.Location = new Point(252, 12);
-            btnRefreshRecords.Name = "btnRefreshRecords";
-            btnRefreshRecords.Size = new Size(177, 23);
-            btnRefreshRecords.TabIndex = 7;
-            btnRefreshRecords.Text = "Kayıtları Yenile";
-            btnRefreshRecords.UseVisualStyleBackColor = true;
-            // 
-            // btnRetrySelected
-            // 
-            btnRetrySelected.Location = new Point(430, 12);
-            btnRetrySelected.Name = "btnRetrySelected";
-            btnRetrySelected.Size = new Size(177, 23);
-            btnRetrySelected.TabIndex = 8;
-            btnRetrySelected.Text = "Seçiliyi Yeniden Dene";
-            btnRetrySelected.UseVisualStyleBackColor = true;
             // 
             // ClearingView
             // 
@@ -311,7 +315,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(splitContainer1);
             Name = "ClearingView";
-            Size = new Size(1267, 603);
+            Size = new Size(1330, 603);
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();

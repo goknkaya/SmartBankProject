@@ -40,7 +40,19 @@ namespace SmartBank.Desktop.Win.Views
             dgvBatches.DataSource = _bsBatches;
             dgvBatches.DataError += (s, e) => e.ThrowException = false;
 
-            // Kolon formatları (designer’da DataPropertyName’leri DTO ile bire bir yap)
+            colB_BatchId.DataPropertyName = "Id";
+            colB_Direction.DataPropertyName = "Direction";
+            colB_FileName.DataPropertyName = "FileName";
+            colB_FileHash.DataPropertyName = "FileHash";
+            colB_SettlementDate.DataPropertyName = "SettlementDate";
+            colB_Status.DataPropertyName = "Status";
+            colB_TotalCount.DataPropertyName = "TotalCount";
+            colB_SuccessCount.DataPropertyName = "SuccessCount";
+            colB_FailCount.DataPropertyName = "FailCount";
+            colB_CreatedAt.DataPropertyName = "CreatedAt";
+            colB_ProcessedAt.DataPropertyName = "ProcessedAt";
+            colB_Notes.DataPropertyName = "Notes";
+
             colB_SettlementDate.DefaultCellStyle.Format = "dd.MM.yyyy";
             colB_CreatedAt.DefaultCellStyle.Format = "dd.MM.yyyy HH:mm";
             colB_ProcessedAt.DefaultCellStyle.Format = "dd.MM.yyyy HH:mm";
@@ -60,6 +72,19 @@ namespace SmartBank.Desktop.Win.Views
             dgvRecords.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvRecords.DataSource = _bsRecords;
             dgvRecords.DataError += (s, e) => e.ThrowException = false;
+
+            colR_RecordId.DataPropertyName = "Id";
+            colR_LineNumber.DataPropertyName = "LineNumber";
+            colR_TransactionId.DataPropertyName = "TransactionId";
+            colR_CardId.DataPropertyName = "CardId";
+            colR_CardLast4.DataPropertyName = "CardLast4";
+            colR_Amount.DataPropertyName = "Amount";
+            colR_Currency.DataPropertyName = "Currency";
+            colR_TransactionDate.DataPropertyName = "TransactionDate";
+            colR_MerchantName.DataPropertyName = "MerchantName";
+            colR_MatchStatus.DataPropertyName = "MatchStatus";
+            colR_ErrorMessage.DataPropertyName = "ErrorMessage";
+            colR_CreatedAt.DataPropertyName = "CreatedAt";
 
             colR_Amount.DefaultCellStyle.Format = "N2";
             colR_Amount.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
@@ -165,17 +190,18 @@ namespace SmartBank.Desktop.Win.Views
 
             try
             {
-                // int dönebilir: M’ye dönen satır sayısı
-                var changed = await _client.PostAsync<object, int>($"api/clearing/batches/{id}/retry", new { });
+                // CEVABI ÖNEMSEME: sadece tetikle
+                await _client.PostAsync<object, object>($"api/clearing/batches/{id}/retry", new { }, withAuth: true);
 
+                // Listeleri tazele
                 await LoadSelectedBatchRecordsAsync();
                 await LoadBatchesAsync();
 
-                MessageBox.Show($"Yeniden denendi. Matched olan: {changed}", "Bilgi");
+                MessageBox.Show("Eşleşmeyenler yeniden denendi.", "Bilgi");
             }
             catch (ApiException ex)
             {
-                ShowApiError("Retry", ex);
+                ShowApiError("Eşleşmeyenleri Yeniden Dene", ex);
             }
         }
 
@@ -258,31 +284,37 @@ namespace SmartBank.Desktop.Win.Views
         private void ShowApiError(string title, ApiException ex)
         {
             var body = (ex.ResponseBody ?? "").Trim();
-            if (body.Length > 400) body = body[..400] + "...";
+            if (body.Length > 2000) body = body[..2000] + "...";
 
-            var msg = ex.StatusCode switch
+            // herhangi bir statüde, body varsa onu göster (özellikle 500'de)
+            if (!string.IsNullOrWhiteSpace(body))
             {
-                400 => body != "" ? body : "Geçersiz istek.",
-                404 => "Kayıt bulunamadı.",
-                409 => body != "" ? body : "Çakışma / iş kuralı ihlali.",
-                500 => "Sunucu hatası.",
-                _ => body != "" ? body : $"İşlem başarısız. Kod: {ex.StatusCode}"
-            };
+                MessageBox.Show(body, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-            MessageBox.Show(msg, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            // body yoksa kısa özet
+            MessageBox.Show($"{title}: HTTP {ex.StatusCode}", title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+
 
         // ====== OUT dosya indirme (octet-stream veya base64 JSON) ======
         private async Task<string> DownloadOutgoingAsync(DateTime settlementDate)
         {
             // 1) API raw dosya döndürüyorsa:
-            var url = $"api/clearing/out?settlementDate={settlementDate:yyyy-MM-dd}";
+            var url = $"api/clearing/outgoing?settlementDate={settlementDate:yyyy-MM-dd}";
 
-            // ApiClient’ın varsa: GetBytesAsync; yoksa:
             using var http = new HttpClient { BaseAddress = _client.BaseAddress };
-            foreach (var (k, v) in _client.DefaultHeaders) http.DefaultRequestHeaders.TryAddWithoutValidation(k, v);
+            foreach (var (k, v) in _client.DefaultHeaders)
+                http.DefaultRequestHeaders.TryAddWithoutValidation(k, v);
 
-            var resp = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            // Authorization'ı kesin ekle
+            if (!string.IsNullOrWhiteSpace(AuthContext.Token))
+                http.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", AuthContext.Token);
+
+            // GET yerine POST (boş içerik)
+            var resp = await http.PostAsync(url, content: null);
             resp.EnsureSuccessStatusCode();
 
             // Octet-stream mi?

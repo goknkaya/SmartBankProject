@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartBank.Application.DTOs.Clearing;
 using SmartBank.Application.Interfaces;
+using SmartBank.Application.Services;
 
 namespace SmartBank.Api.Controllers
 {
@@ -16,7 +17,6 @@ namespace SmartBank.Api.Controllers
         [RequestSizeLimit(200_000_000)]
         public async Task<IActionResult> UploadIncoming([FromForm] IncomingUploadRequest req)
         {
-            if (req.File == null || req.File.Length == 0) return BadRequest("Dosya boş.");
             var dto = await _svc.UploadIncomingAsync(req);
             return Ok(dto);
         }
@@ -24,11 +24,10 @@ namespace SmartBank.Api.Controllers
         // 2) OUT dosyası üret → CSV indir
         // Query: ?settlementDate=2025-08-15
         [HttpPost("outgoing")]
-        [Produces("text/csv")]
         public async Task<IActionResult> GenerateOutgoing([FromQuery] DateTime settlementDate)
         {
-            var (_, bytes, name) = await _svc.GenerateOutgoingAsync(settlementDate);
-            return File(bytes, "text/csv", name);
+            var (_, bytes, fileName) = await _svc.GenerateOutgoingAsync(settlementDate);
+            return File(bytes, "application/octet-stream", fileName);
         }
 
         // 3) Batch listesi

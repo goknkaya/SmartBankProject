@@ -28,17 +28,17 @@ namespace SmartBank.Application.Services
         public async Task<SelectClearingBatchDto> UploadIncomingAsync(IncomingUploadRequest req)
         {
             if (req.File == null || req.File.Length == 0)
-                throw new InvalidOperationException("Yüklenecek dosya bulunamadı.");
+                throw new ApplicationException("Yüklenecek dosya bulunamadı.");
 
             // Dosya hash'i (aynı dosyayı ikinci kez işleme koruması)
             var hash = await ComputeSha256Async(req.File);
             if (!string.IsNullOrWhiteSpace(req.FileHash) &&
                 !hash.Equals(req.FileHash, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("FileHash doğrulaması başarısız.");
+                throw new ApplicationException("FileHash doğrulaması başarısız.");
 
             var isDup = await _db.ClearingBatches.AnyAsync(b => b.FileHash == hash && b.Direction == "IN");
             if (isDup)
-                throw new InvalidOperationException("Bu dosya daha önce işlenmiş görünüyor.");
+                throw new ApplicationException("Bu dosya daha önce işlenmiş görünüyor.");
 
             var batch = new ClearingBatch
             {
@@ -64,13 +64,43 @@ namespace SmartBank.Application.Services
             foreach (var r in records)
                 await TryMatchAsync(r);
 
-            // ⬇️ ÖNEMLİ: eşleştirme ile yapılan alan değişikliklerini DB’ye yaz
-            await _db.SaveChangesAsync();
+            // ===== ÇAKIŞMA (X) İLK YÜKLEMEDE DE YAKALANSIN =====
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (
+                ex.InnerException is SqlException sql &&
+                (sql.Number == 2601 || sql.Number == 2627)
+            )
+            {
+                // Çakışma kontrolünü bellekte yap
+                var conflicts = (await _db.ClearingRecords
+                    .Where(r => r.BatchId == batch.Id && r.TransactionId != null)
+                    .ToListAsync())
+                    .GroupBy(r => r.TransactionId)
+                    .Where(g => g.Count() > 1)
+                    .SelectMany(g => g)
+                    .ToList();
 
-            // ⬇️ Sayıları güvenle hesapla (liste üzerinden)
-            var matched = records.Count(r => r.MatchStatus == "M");
+                foreach (var c in conflicts)
+                {
+                    c.MatchStatus = "X";
+                    c.TransactionId = null;
+                    c.CardId = null;
+                    c.ErrorMessage = "Aynı Transaction bu batch içinde birden fazla satıra bağlanmaya çalıştı.";
+                }
+
+                await _db.SaveChangesAsync();
+            }
+
+            // Sayıları güvenle DB üzerinden hesapla (X dahil başarısızlara girer)
+            var total = await _db.ClearingRecords.CountAsync(r => r.BatchId == batch.Id);
+            var matched = await _db.ClearingRecords.CountAsync(r => r.BatchId == batch.Id && r.MatchStatus == "M");
+
+            batch.TotalCount = total;
             batch.SuccessCount = matched;
-            batch.FailCount = batch.TotalCount - matched; // N + E
+            batch.FailCount = total - matched; // N + E + X
 
             batch.Status = "P";
             batch.ProcessedAt = DateTime.Now;
@@ -183,7 +213,7 @@ namespace SmartBank.Application.Services
             {
                 await _db.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 ||  sql.Number == 2627)) // 2601 unique index ihlali, 2627 unique constraint ihlali 
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627)) // 2601 unique index ihlali, 2627 unique constraint ihlali 
             {
                 // Unique index hatası: aynı batch + aynı TransactionId çakışması
                 // => İlgili satırları X (conflict) olarak işaretle
@@ -206,7 +236,7 @@ namespace SmartBank.Application.Services
 
             // batch sayıları güncelle
             var batch = await _db.ClearingBatches.FirstOrDefaultAsync(b => b.Id == batchId)
-                        ?? throw new InvalidOperationException($"Batch {batchId} bulunamadı.");
+                        ?? throw new ApplicationException($"Batch {batchId} bulunamadı.");
 
             var m = await _db.ClearingRecords.CountAsync(r => r.BatchId == batchId && r.MatchStatus == "M");
             batch.SuccessCount = m;
@@ -346,84 +376,45 @@ namespace SmartBank.Application.Services
         }
 
         // Eşleştirme: hatalıysa E, bulunamazsa N, bulunursa M
-        private async Task TryMatchAsync(ClearingRecord r)
+        private async Task TryMatchAsync(ClearingRecord record)
         {
-            try
+            // Transaction eşleştirmeye çalış
+            var trx = await _db.Transactions
+                .FirstOrDefaultAsync(t =>
+                    t.CardId != null &&
+                    t.Card.CardNumber.EndsWith(record.CardLast4 ?? "") &&
+                    t.Amount == record.Amount &&
+                    t.Currency == record.Currency &&
+                    t.TransactionDate == record.TransactionDate &&
+                    t.Description == record.MerchantName);
+
+            // Hiç eşleşen yoksa → N
+            if (trx == null)
             {
-                // parse esnasında E oluştuysa dokunma
-                if (r.MatchStatus == "E") return;
-
-                // emniyet: normalize
-                r.CardLast4 = NormalizeLast4(r.CardLast4);
-
-                bool strictMerchant = false; // gerekirse parametreleştir
-                var q = _db.Transactions
-                    .AsNoTracking()
-                    .Include(t => t.Card)
-                    .Where(t => t.Status == "S"
-                                && t.Amount == r.Amount
-                                && t.Currency == r.Currency);
-
-                if (r.TransactionDate.HasValue)
-                {
-                    var day = r.TransactionDate.Value.Date;
-                    q = q.Where(t => t.TransactionDate >= day && t.TransactionDate < day.AddDays(1));
-                }
-
-                if (strictMerchant && !string.IsNullOrWhiteSpace(r.MerchantName))
-                {
-                    var m = r.MerchantName.Trim();
-                    q = q.Where(t => t.Description == m);
-                }
-
-                var candidates = await q.ToListAsync();
-
-                var match = candidates.FirstOrDefault(t =>
-                {
-                    var last4 = GetLast4(t.Card?.CardNumber);
-                    return r.CardLast4 != null && last4 == r.CardLast4;
-                });
-
-                if (match == null)
-                {
-                    r.MatchStatus = "N";
-                    r.ErrorMessage = "Eşleşen işlem bulunamadı.";
-                    r.TransactionId = null;
-                    r.CardId = null;
-                    return;
-                }
-
-                // --- CONFLICT ÖN KONTROL (aynı batch'te aynı TransactionId zaten bağlanmış mı?)
-                var alreadyUsed = await _db.ClearingRecords
-                    .AsNoTracking()
-                    .AnyAsync(x => x.BatchId == r.BatchId &&
-                                    x.TransactionId == match.Id &&
-                                    x.Id != r.Id);
-
-                if (alreadyUsed)
-                {
-                    // "X" -> conflict 
-                    r.MatchStatus = "X";
-                    r.ErrorMessage = "Bu Transaction aynı batch içinde baka satıra zaten bağlanmış.";
-                    r.TransactionId = null;
-                    r.CardId = null;
-                    return;
-                }
-
-                // güvenle bağla
-                r.MatchStatus = "M";
-                r.TransactionId = match.Id;
-                r.CardId = match.CardId;
-                r.ErrorMessage = null;
+                record.MatchStatus = "N";
+                record.ErrorMessage = "Eşleşen işlem bulunamadı.";
+                return;
             }
-            catch (Exception ex)
+
+            // Daha önce başka bir kayıt bu transaction’a eşleşmiş mi?
+            var alreadyMatched = await _db.ClearingRecords
+                .AnyAsync(r => r.TransactionId == trx.Id && r.Id != record.Id && r.MatchStatus == "M");
+
+            if (alreadyMatched)
             {
-                r.MatchStatus = "E";
-                r.ErrorMessage = ex.Message;
-                r.TransactionId = null;
-                r.CardId = null;
+                // Aynı transaction’a ikinci kez denk geldi → X
+                record.MatchStatus = "X";
+                record.ErrorMessage = "Aynı işlem başka satırda zaten eşleşmiş.";
+            }
+            else
+            {
+                // İlk eşleşme → M
+                record.TransactionId = trx.Id;
+                record.MatchStatus = "M";
+                record.ErrorMessage = null;
             }
         }
+
 
         private static string GetLast4(string? pan)
         {

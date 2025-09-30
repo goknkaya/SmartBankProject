@@ -28,11 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
             menuStrip1 = new MenuStrip();
             miList = new ToolStripMenuItem();
             miGetById = new ToolStripMenuItem();
@@ -197,17 +197,18 @@
             // 
             dgvRev.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvRev.Columns.AddRange(new DataGridViewColumn[] { colId, colTransactionId, colReversedAmount, colReason, colPerformedBy, colStatus, colReversalDate, colReversalSource, colIsCardLimitRestored, colVoidedBy, colVoidedAt, colVoidReason });
-            dgvRev.Location = new Point(19, 319);
+            dgvRev.Dock = DockStyle.Bottom;
+            dgvRev.Location = new Point(0, 343);
             dgvRev.Name = "dgvRev";
-            dgvRev.Size = new Size(1420, 388);
+            dgvRev.Size = new Size(1455, 388);
             dgvRev.TabIndex = 10;
             dgvRev.CellFormatting += dgvRev_CellFormatting;
             // 
             // colId
             // 
             colId.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle6.Alignment = DataGridViewContentAlignment.MiddleRight;
-            colId.DefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            colId.DefaultCellStyle = dataGridViewCellStyle1;
             colId.HeaderText = "ID";
             colId.Name = "colId";
             colId.ReadOnly = true;
@@ -216,8 +217,8 @@
             // colTransactionId
             // 
             colTransactionId.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleRight;
-            colTransactionId.DefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
+            colTransactionId.DefaultCellStyle = dataGridViewCellStyle2;
             colTransactionId.HeaderText = "İşlem ID";
             colTransactionId.Name = "colTransactionId";
             colTransactionId.ReadOnly = true;
@@ -226,9 +227,9 @@
             // colReversedAmount
             // 
             colReversedAmount.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle8.Format = "N2";
-            colReversedAmount.DefaultCellStyle = dataGridViewCellStyle8;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle3.Format = "N2";
+            colReversedAmount.DefaultCellStyle = dataGridViewCellStyle3;
             colReversedAmount.HeaderText = "Tutar (Reversal)";
             colReversedAmount.Name = "colReversedAmount";
             colReversedAmount.ReadOnly = true;
@@ -263,8 +264,8 @@
             // colReversalDate
             // 
             colReversalDate.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle9.Format = "dd.MM.yyyy HH:mm";
-            colReversalDate.DefaultCellStyle = dataGridViewCellStyle9;
+            dataGridViewCellStyle4.Format = "dd.MM.yyyy HH:mm";
+            colReversalDate.DefaultCellStyle = dataGridViewCellStyle4;
             colReversalDate.HeaderText = "Reversal Tarihi";
             colReversalDate.Name = "colReversalDate";
             colReversalDate.ReadOnly = true;
@@ -299,8 +300,8 @@
             // colVoidedAt
             // 
             colVoidedAt.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle10.Format = "dd.MM.yyyy HH:mm";
-            colVoidedAt.DefaultCellStyle = dataGridViewCellStyle10;
+            dataGridViewCellStyle5.Format = "dd.MM.yyyy HH:mm";
+            colVoidedAt.DefaultCellStyle = dataGridViewCellStyle5;
             colVoidedAt.HeaderText = "Void Tarihi";
             colVoidedAt.Name = "colVoidedAt";
             colVoidedAt.ReadOnly = true;

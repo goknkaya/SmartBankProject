@@ -45,7 +45,7 @@ namespace SmartBank.Desktop.Win
 
         private void btnClearing_Click(object sender, EventArgs e)
         {
-
+            OpenView(new ClearingView(_api));
         }
     }
 }
