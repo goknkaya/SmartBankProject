@@ -26,7 +26,7 @@ namespace SmartBank.Application.Services
             var cleanPan = (dto.PAN ?? "").Replace(" ", "");
             var bin = cleanPan.Length >= 6 ? cleanPan[..6] : cleanPan;
             var cur = (dto.Currency ?? "TRY").ToUpperInvariant();
-            var txTime = (dto.TxnTime ?? dto.TxnTime ?? DateTime.Now).ToUniversalTime();
+            var txTime = (dto.TxnTime ?? DateTime.Now).ToUniversalTime();
 
             // -- 1) Issuer
             var issuer = await _dbContext.CardBins
@@ -67,7 +67,7 @@ namespace SmartBank.Application.Services
                 PANMasked = MaskPan(cleanPan),
                 Bin = bin,
                 Amount = dto.Amount,
-                Currency = dto.Currency.ToUpperInvariant(),
+                Currency = cur,
                 Acquirer = dto.Acquirer,
                 Issuer = issuer,
                 Status = "Pending",

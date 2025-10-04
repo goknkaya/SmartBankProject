@@ -47,5 +47,10 @@ namespace SmartBank.Desktop.Win
         {
             OpenView(new ClearingView(_api));
         }
+
+        private void btnSwitch_Click(object sender, EventArgs e)
+        {
+            OpenView(new SwitchView(_api));
+        }
     }
 }

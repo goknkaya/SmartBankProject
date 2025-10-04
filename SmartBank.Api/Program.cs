@@ -16,20 +16,23 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DB
+// ================= DB =================
 builder.Services.AddDbContext<CustomerCoreDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// AutoMapper & FluentValidation
+// ============== AutoMapper & FluentValidation ==============
 builder.Services.AddAutoMapper(typeof(ClearingProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(ReversalProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(SwitchProfile).Assembly);
+
 builder.Services.AddFluentValidationAutoValidation()
                 .AddFluentValidationClientsideAdapters();
-builder.Services.AddValidatorsFromAssembly(typeof(ClearingProfile).Assembly);
-builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidator).Assembly);
-builder.Services.AddAutoMapper(typeof(ReversalProfile).Assembly);
-builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
 
-// DI
+builder.Services.AddValidatorsFromAssembly(typeof(ClearingProfile).Assembly);
+builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
+builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidator).Assembly);
+
+// ================== DI ==================
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
@@ -38,14 +41,14 @@ builder.Services.AddScoped<IChargebackService, ChargebackService>();
 builder.Services.AddScoped<IClearingService, ClearingService>();
 builder.Services.AddScoped<ISwitchService, SwitchService>();
 
-// Controllers + JSON
+// ============= Controllers + JSON =============
 builder.Services.AddControllers().AddJsonOptions(o =>
 {
     o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
-// JWT
+// ================== JWT ==================
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -68,7 +71,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Swagger
+// ================= Swagger =================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -76,6 +79,7 @@ builder.Services.AddSwaggerGen(c =>
     c.CustomSchemaIds(t => t.FullName);
     c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
 
+    // JWT auth button
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -93,10 +97,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// *** Dev exception page KAPALI olsun (yoksa stack trace döner). ***
-// if (app.Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
-
-// === GLOBAL EXCEPTION HANDLER (sadece kısa, düz metin) ===
+// ======= Global Exception Handler (sade metin) =======
 app.UseExceptionHandler(config =>
 {
     config.Run(async context =>
@@ -104,19 +105,17 @@ app.UseExceptionHandler(config =>
         var feature = context.Features.Get<IExceptionHandlerFeature>();
         var ex = feature?.Error;
 
-        // Varsayılanlar
         var status = 500;
         var message = "Sunucu hatası.";
 
         if (ex != null)
         {
-            // Tip bazlı sade eşleme (istersen genişlet)
             message = ex.Message;
             status = ex switch
             {
                 FluentValidation.ValidationException => 400,
-                InvalidOperationException => 409,      // çakışma/kural ihlali
-                ApplicationException => 400,           // iş kuralı
+                InvalidOperationException => 409,   // çakışma / iş kuralı ihlali
+                ApplicationException => 400,        // iş kuralı
                 _ => 500
             };
         }
@@ -127,7 +126,7 @@ app.UseExceptionHandler(config =>
     });
 });
 
-// Swagger ANONİM
+// ============== Swagger (anonim) ==============
 app.MapSwagger().AllowAnonymous();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -140,11 +139,11 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Anonim yardımcı uçlar
+// ============== Anonim yardımcı uçlar ==============
 app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous();
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.Now })).AllowAnonymous();
 
-// Tüm controller’lar JWT ister
+// ============== Tüm controller'lar JWT ister ==============
 app.MapControllers().RequireAuthorization();
 
 app.Run();

@@ -103,8 +103,8 @@ namespace SmartBank.Infrastructure.Persistence
                 e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
                 e.Property(x => x.Acquirer).HasMaxLength(50);
                 e.Property(x => x.Issuer).HasMaxLength(50);
-                e.Property(x => x.Status).HasMaxLength(20);
-                e.Property(x => x.ExternalId).HasMaxLength(64);
+                e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Pending");
+                e.Property(x => x.ExternalId).HasMaxLength(64).IsRequired();
 
                 // Amount -> decimal(18,2)
                 e.Property(x => x.Amount).HasColumnType("decimal(18,2)");
@@ -146,6 +146,11 @@ namespace SmartBank.Infrastructure.Persistence
 
                 e.HasIndex(x => x.MessageId);
                 e.HasIndex(x => x.CreatedAt);
+
+                e.HasOne(x => x.Message)
+                    .WithMany()
+                    .HasForeignKey(x => x.MessageId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // =======================
@@ -153,9 +158,11 @@ namespace SmartBank.Infrastructure.Persistence
             // =======================
             modelBuilder.Entity<CardBin>(e =>
             {
-                e.Property(x => x.Bin).HasMaxLength(6).IsRequired();
-                e.Property(x => x.Issuer).HasMaxLength(50).IsRequired();
-                e.HasIndex(x => x.Bin).IsUnique(); // BIN benzersiz
+                e.ToTable("CardBins");
+                e.HasKey(x => x.Id);
+                e.HasIndex(x => x.Bin).IsUnique();
+                e.Property(x => x.Bin).HasMaxLength(6);
+                e.Property(x => x.Issuer).HasMaxLength(50);
             });
 
             // =======================

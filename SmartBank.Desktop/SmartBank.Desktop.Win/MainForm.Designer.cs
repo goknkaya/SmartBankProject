@@ -109,6 +109,7 @@
             btnSwitch.Text = "Switch";
             btnSwitch.TextAlign = ContentAlignment.MiddleLeft;
             btnSwitch.UseVisualStyleBackColor = true;
+            btnSwitch.Click += btnSwitch_Click;
             // 
             // btnClearing
             // 
