@@ -160,6 +160,7 @@
             btnChargeback.Text = "Chargeback";
             btnChargeback.TextAlign = ContentAlignment.MiddleLeft;
             btnChargeback.UseVisualStyleBackColor = true;
+            btnChargeback.Click += btnChargeback_Click;
             // 
             // panelMenu
             // 

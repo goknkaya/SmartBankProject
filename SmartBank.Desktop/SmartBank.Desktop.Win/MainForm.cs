@@ -52,5 +52,10 @@ namespace SmartBank.Desktop.Win
         {
             OpenView(new SwitchView(_api));
         }
+
+        private void btnChargeback_Click(object sender, EventArgs e)
+        {
+            OpenView(new ChargebackView(_api));
+        }
     }
 }
