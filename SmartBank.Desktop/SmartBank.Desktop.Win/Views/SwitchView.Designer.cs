@@ -64,6 +64,7 @@
             Created = new DataGridViewTextBoxColumn();
             PayloadIn = new DataGridViewTextBoxColumn();
             PayloadOut = new DataGridViewTextBoxColumn();
+            btnClear = new Button();
             ((System.ComponentModel.ISupportInitialize)nudAmount).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvMessages).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvLogs).BeginInit();
@@ -135,7 +136,7 @@
             dgvMessages.ReadOnly = true;
             dgvMessages.RowHeadersVisible = false;
             dgvMessages.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvMessages.Size = new Size(994, 234);
+            dgvMessages.Size = new Size(994, 180);
             dgvMessages.TabIndex = 6;
             // 
             // Id
@@ -301,13 +302,13 @@
             dgvLogs.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
             dgvLogs.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvLogs.Columns.AddRange(new DataGridViewColumn[] { Stage, Level, Note, Created, PayloadIn, PayloadOut });
-            dgvLogs.Location = new Point(0, 547);
+            dgvLogs.Location = new Point(0, 523);
             dgvLogs.MultiSelect = false;
             dgvLogs.Name = "dgvLogs";
             dgvLogs.ReadOnly = true;
             dgvLogs.RowHeadersVisible = false;
             dgvLogs.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvLogs.Size = new Size(994, 236);
+            dgvLogs.Size = new Size(994, 260);
             dgvLogs.TabIndex = 16;
             // 
             // Stage
@@ -360,10 +361,21 @@
             PayloadOut.ReadOnly = true;
             PayloadOut.Width = 94;
             // 
+            // btnClear
+            // 
+            btnClear.Location = new Point(183, 252);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(349, 23);
+            btnClear.TabIndex = 17;
+            btnClear.Text = "TEMİZLE";
+            btnClear.UseVisualStyleBackColor = true;
+            btnClear.Click += btnClear_Click;
+            // 
             // SwitchView
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(btnClear);
             Controls.Add(dgvLogs);
             Controls.Add(label6);
             Controls.Add(label5);
@@ -425,5 +437,6 @@
         private DataGridViewTextBoxColumn Created;
         private DataGridViewTextBoxColumn PayloadIn;
         private DataGridViewTextBoxColumn PayloadOut;
+        private Button btnClear;
     }
 }

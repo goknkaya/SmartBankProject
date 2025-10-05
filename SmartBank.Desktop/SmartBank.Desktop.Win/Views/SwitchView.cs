@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using SmartBank.Desktop.Win.Core;
 using SmartBank.Desktop.Win.Core.Contracts;
-using System.ComponentModel;
 
 namespace SmartBank.Desktop.Win.Views
 {
@@ -18,6 +17,7 @@ namespace SmartBank.Desktop.Win.Views
         private readonly ApiClient _client;
         private readonly BindingSource _bsMsgs = new();
         private readonly BindingSource _bsLogs = new();
+        private bool _loadedOnce = false;
 
         public SwitchView(ApiClient client)
         {
@@ -27,6 +27,30 @@ namespace SmartBank.Desktop.Win.Views
             InitInputs();
             SetupGrids();
             WireEvents();
+
+            this.Load += async (_, __) => await LoadOnStartupAsync();
+        }
+
+        private async Task LoadOnStartupAsync()
+        {
+            if (_loadedOnce) return;
+            _loadedOnce = true;
+
+            try
+            {
+                await LoadMessagesAsync();
+
+                // İlk satırı seç -> SelectionChanged tetiklenir, loglar da yüklenir
+                if (dgvMessages.Rows.Count > 0)
+                {
+                    dgvMessages.ClearSelection();
+                    dgvMessages.Rows[0].Selected = true;
+                }
+            }
+            catch (ApiException ex)
+            {
+                ShowApiError("Initial Load", ex);
+            }
         }
 
         private void InitInputs()
@@ -43,8 +67,7 @@ namespace SmartBank.Desktop.Win.Views
             dtpTxnTime.CustomFormat = "dd.MM.yyyy HH:mm";
             dtpTxnTime.Value = DateTime.Now;
 
-            if (FindForm() is Form f)
-                f.Text = "SmartBank Ödeme Sistemleri / Switch";
+            this.Load += (_, __) => UpdateFormTitle();
         }
 
         private void SetupGrids()
@@ -68,6 +91,26 @@ namespace SmartBank.Desktop.Win.Views
 
         // --- Actions ---
 
+        private void ClearInputs()
+        {
+            txtPAN.Text = "";
+            nudAmount.Value = nudAmount.Minimum < 0.01m ? 0 : 0.01m; // senin varsayılanın farklıysa ayarla
+            if (cboCurrency.Items.Contains("TRY"))
+                cboCurrency.SelectedItem = "TRY";
+            else if (cboCurrency.Items.Count > 0)
+                cboCurrency.SelectedIndex = 0;
+
+            txtAcquirer.Text = "DemoPOS";
+            txtMerchant.Text = "";
+            dtpTxnTime.Value = DateTime.Now;
+
+            // Gridleri temizleme! Sadece seçimleri sıfırlayalım:
+            dgvMessages.ClearSelection();
+            dgvLogs.ClearSelection();
+
+            txtPAN.Focus();
+        }
+
         private async Task SendAsync()
         {
             try
@@ -89,6 +132,7 @@ namespace SmartBank.Desktop.Win.Views
                 {
                     MessageBox.Show($"Cevap: {res.Status}\nId: {res.Id}\nIssuer: {res.Issuer}", "Process");
                     await LoadMessagesAsync(); // tazele
+                    ClearInputs();
                 }
             }
             catch (ApiException ex)
@@ -147,6 +191,18 @@ namespace SmartBank.Desktop.Win.Views
             if (body.Length > 1000) body = body[..1000] + "...";
             MessageBox.Show(string.IsNullOrWhiteSpace(body) ? $"{title}: HTTP {ex.StatusCode}" : body, title,
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            ClearInputs();
+        }
+
+        private void UpdateFormTitle()
+        {
+            var f = this.FindForm();
+            if (f != null)
+                f.Text = "SmartBank Ödeme Sistemleri / Switch";
         }
     }
 }
