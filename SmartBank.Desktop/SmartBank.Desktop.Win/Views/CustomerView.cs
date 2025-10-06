@@ -18,8 +18,8 @@ namespace SmartBank.Desktop.Win.Views
             InitializeComponent();
             _api = api;
 
-            // Grid bağlama
-            grid.AutoGenerateColumns = true;
+            // GRID
+            grid.AutoGenerateColumns = false;      // manuel kolon -> auto kapalı
             grid.Columns.Clear();
 
             grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "FirstName", HeaderText = "Ad" });
@@ -34,11 +34,10 @@ namespace SmartBank.Desktop.Win.Views
             grid.Columns.Add(new DataGridViewCheckBoxColumn { DataPropertyName = "IsActive", HeaderText = "Aktif" });
 
             grid.DataSource = _list;
-
             grid.SelectionChanged += (_, __) => OnGridSelectionChanged();
             grid.CellFormatting += Grid_CellFormatting;
 
-            // Menü eventleri
+            // MENÜ
             miList.Click += async (_, __) => await LoadListAsync();
             miInsert.Click += (_, __) => EnterCreateMode();
             miUpdate.Click += (_, __) => EnterEditMode();
@@ -46,7 +45,7 @@ namespace SmartBank.Desktop.Win.Views
             miSave.Click += async (_, __) => await SaveAsync();
             miCancel.Click += (_, __) => EnterViewMode();
 
-            // Cinsiyet bilgisi
+            // CİNSİYET
             cmbGender.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbGender.DisplayMember = "Text";
             cmbGender.ValueMember = "Value";
@@ -127,7 +126,7 @@ namespace SmartBank.Desktop.Win.Views
 
         private void SetFormEnabled(bool enabled, bool isCreate = true)
         {
-            // UpdateCustomerDto alanları editlenebilir
+            // Update edilebilir alanlar
             txtEmail.Enabled = enabled;
             txtPhone.Enabled = enabled;
             txtAddress.Enabled = enabled;
@@ -156,7 +155,7 @@ namespace SmartBank.Desktop.Win.Views
             dteBirth.ShowCheckBox = true;
             dteBirth.Checked = false;
 
-            cmbGender.SelectedIndex = -1;          // <-- boş
+            cmbGender.SelectedIndex = -1; // boş
         }
 
         private void FillForm(SelectCustomerDto dto)
@@ -171,7 +170,7 @@ namespace SmartBank.Desktop.Win.Views
             txtCountry.Text = dto.Country ?? "";
 
             // Doğum tarihi
-            dteBirth.ShowCheckBox = true; // boş/unknown olasılığı için
+            dteBirth.ShowCheckBox = true;
             if (dto.BirthDate == default || dto.BirthDate.Year < 1900)
             {
                 dteBirth.Checked = false;
@@ -191,7 +190,6 @@ namespace SmartBank.Desktop.Win.Views
             else if (g == "F" || g == "FEMALE") cmbGender.SelectedValue = "F";
             else cmbGender.SelectedIndex = -1;
 
-            // (Varsa) aktif/pasif checkbox’ı da doldur
             if (Controls.Find("chkIsActive", true).FirstOrDefault() is CheckBox chk)
                 chk.Checked = dto.IsActive;
         }
@@ -211,27 +209,21 @@ namespace SmartBank.Desktop.Win.Views
         {
             try
             {
-                // 1) Grid üzerinde geçici “bağlamı” temizle
                 grid.SuspendLayout();
-                grid.CurrentCell = null;      // <-- kritik
+                grid.CurrentCell = null;
                 grid.ClearSelection();
 
-                // 2) Veriyi çek
                 var data = await _api.GetAsync<List<SelectCustomerDto>>("/api/Customer");
 
-                // 3) Listeyi doldur (binding kaynağı bizim BindingList)
                 _list.Clear();
                 if (data != null)
                     foreach (var item in data) _list.Add(item);
 
-                // 4) Sütunları gizle/göster – CurrentCell boştayken yap
                 if (grid.Columns["Id"] != null) grid.Columns["Id"].Visible = false;
                 if (grid.Columns["AddressLine"] != null) grid.Columns["AddressLine"].Visible = false;
 
-                // 5) İlk satırı ve ilk GÖRÜNÜR sütunu seç
                 if (grid.Rows.Count > 0)
                 {
-                    // görünür ilk sütunu bul
                     int firstVisibleCol = grid.Columns
                         .Cast<DataGridViewColumn>()
                         .Where(c => c.Visible)
@@ -239,11 +231,11 @@ namespace SmartBank.Desktop.Win.Views
                         .Select(c => c.Index)
                         .FirstOrDefault();
 
-                    // bir CurrentCell atayıp satırı seç
+                    if (firstVisibleCol < 0) firstVisibleCol = 0;
+
                     grid.CurrentCell = grid.Rows[0].Cells[firstVisibleCol];
                     grid.Rows[0].Selected = true;
 
-                    // sağ formu doldur
                     OnGridSelectionChanged();
                 }
             }
@@ -270,8 +262,11 @@ namespace SmartBank.Desktop.Win.Views
                 {
                     if (_selected == null) { MessageBox.Show("Seçim yok."); return; }
                     var update = BuildUpdateDto(_selected.Id);
-                    await _api.PutAsync<UpdateCustomerDto, SelectCustomerDto>($"/api/Customer/{_selected.Id}", update);
+
+                    // Controller 204 döndüğü için body bekleme:
+                    await _api.PutAsync<UpdateCustomerDto, object>($"/api/Customer/{_selected.Id}", update);
                 }
+
                 await LoadListAsync();
                 EnterViewMode();
             }
@@ -279,7 +274,7 @@ namespace SmartBank.Desktop.Win.Views
             {
                 try
                 {
-                    // FluentValidation + [ApiController] -> ValidationProblemDetails formatı
+                    // JSON ValidationProblemDetails ise göster
                     var pd = System.Text.Json.JsonSerializer.Deserialize<ValidationProblem>(ex.ResponseBody);
 
                     if (pd?.errors != null && pd.errors.Count > 0)
@@ -294,7 +289,7 @@ namespace SmartBank.Desktop.Win.Views
                     }
                     else
                     {
-                        // Başlık varsa onu, yoksa gövdeyi göster
+                        // metin/plain mesaj veya başlık
                         var title = pd?.title ?? ex.ResponseBody;
                         MessageBox.Show(title, $"Hata {(pd?.status ?? ex.StatusCode)}",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -302,7 +297,7 @@ namespace SmartBank.Desktop.Win.Views
                 }
                 catch
                 {
-                    // JSON parse edilemezse ham gövdeyi göster
+                    // JSON değilse ham gövdeyi yaz
                     MessageBox.Show(ex.ResponseBody, $"Hata {ex.StatusCode}",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
@@ -312,6 +307,7 @@ namespace SmartBank.Desktop.Win.Views
                 MessageBox.Show($"Kaydetme başarısız: {ex.Message}");
             }
         }
+
         private async Task DeleteAsync()
         {
             if (_selected == null) { MessageBox.Show("Seçim yok."); return; }
@@ -340,7 +336,7 @@ namespace SmartBank.Desktop.Win.Views
                 Email = txtEmail.Text.Trim(),
                 PhoneNumber = txtPhone.Text.Trim(),
                 BirthDate = dteBirth.Checked ? dteBirth.Value.Date : default,
-                Gender = (cmbGender.SelectedValue as string) ?? "Other",
+                Gender = (cmbGender.SelectedValue as string) ?? null,
                 AddressLine = txtAddress.Text.TrimOrNull(),
                 City = txtCity.Text.TrimOrNull(),
                 Country = txtCountry.Text.TrimOrNull()
@@ -392,5 +388,4 @@ namespace SmartBank.Desktop.Win.Views
         public string? traceId { get; set; }
         public Dictionary<string, string[]>? errors { get; set; }
     }
-
 }

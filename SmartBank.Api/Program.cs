@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SmartBank.Application.DTOs.Validators.Customer;
 using SmartBank.Application.DTOs.Validators.Reversal;
 using SmartBank.Application.Interfaces;
 using SmartBank.Application.MappingProfiles;
@@ -18,9 +19,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ================= DB =================
 builder.Services.AddDbContext<CustomerCoreDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+       .EnableDetailedErrors()
+       .EnableSensitiveDataLogging()); // teşhis için
 
 // ============== AutoMapper & FluentValidation ==============
+builder.Services.AddAutoMapper(typeof(CustomerProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(ClearingProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(ReversalProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(SwitchProfile).Assembly);
@@ -28,6 +32,8 @@ builder.Services.AddAutoMapper(typeof(SwitchProfile).Assembly);
 builder.Services.AddFluentValidationAutoValidation()
                 .AddFluentValidationClientsideAdapters();
 
+// Customer validator’larını KAYDET
+builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerDtoValidator>();
 builder.Services.AddValidatorsFromAssembly(typeof(ClearingProfile).Assembly);
 builder.Services.AddValidatorsFromAssemblyContaining<CreateReversalDtoValidator>();
 builder.Services.AddValidatorsFromAssembly(typeof(CreateSwitchMessageDtoValidator).Assembly);
@@ -97,28 +103,18 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ======= Global Exception Handler (sade metin) =======
+// ======= Global Exception Handler: İÇ MESAJI DÖKSÜN (teşhis için) =======
 app.UseExceptionHandler(config =>
 {
     config.Run(async context =>
     {
-        var feature = context.Features.Get<IExceptionHandlerFeature>();
-        var ex = feature?.Error;
-
+        var ex = context.Features.Get<IExceptionHandlerFeature>()?.Error;
         var status = 500;
-        var message = "Sunucu hatası.";
+        var message = ex?.GetBaseException().Message ?? "Sunucu hatası.";
 
-        if (ex != null)
-        {
-            message = ex.Message;
-            status = ex switch
-            {
-                FluentValidation.ValidationException => 400,
-                InvalidOperationException => 409,   // çakışma / iş kuralı ihlali
-                ApplicationException => 400,        // iş kuralı
-                _ => 500
-            };
-        }
+        if (ex is DbUpdateException) status = 409;
+        else if (ex is FluentValidation.ValidationException) status = 400;
+        else if (ex is InvalidOperationException) status = 409;
 
         context.Response.StatusCode = status;
         context.Response.ContentType = "text/plain; charset=utf-8";

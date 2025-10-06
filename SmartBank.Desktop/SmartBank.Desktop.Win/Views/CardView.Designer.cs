@@ -40,6 +40,18 @@
             miCancel = new ToolStripMenuItem();
             splitMain = new SplitContainer();
             dgvCards = new DataGridView();
+            colCustomer = new DataGridViewTextBoxColumn();
+            colCard = new DataGridViewTextBoxColumn();
+            colExpM = new DataGridViewTextBoxColumn();
+            colExpY = new DataGridViewTextBoxColumn();
+            colStatus = new DataGridViewTextBoxColumn();
+            colProvider = new DataGridViewTextBoxColumn();
+            colCardLimit = new DataGridViewTextBoxColumn();
+            colDaily = new DataGridViewTextBoxColumn();
+            colTxn = new DataGridViewTextBoxColumn();
+            colVirtual = new DataGridViewCheckBoxColumn();
+            colContactless = new DataGridViewCheckBoxColumn();
+            colBlocked = new DataGridViewCheckBoxColumn();
             pnlRight = new Panel();
             tlpForm = new TableLayoutPanel();
             cboBank = new ComboBox();
@@ -86,18 +98,6 @@
             cboExpY = new ComboBox();
             label1 = new Label();
             label13 = new Label();
-            colCustomer = new DataGridViewTextBoxColumn();
-            colCard = new DataGridViewTextBoxColumn();
-            colExpM = new DataGridViewTextBoxColumn();
-            colExpY = new DataGridViewTextBoxColumn();
-            colStatus = new DataGridViewTextBoxColumn();
-            colProvider = new DataGridViewTextBoxColumn();
-            colCardLimit = new DataGridViewTextBoxColumn();
-            colDaily = new DataGridViewTextBoxColumn();
-            colTxn = new DataGridViewTextBoxColumn();
-            colVirtual = new DataGridViewCheckBoxColumn();
-            colContactless = new DataGridViewCheckBoxColumn();
-            colBlocked = new DataGridViewCheckBoxColumn();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitMain).BeginInit();
             splitMain.Panel1.SuspendLayout();
@@ -194,6 +194,102 @@
             dgvCards.ReadOnly = true;
             dgvCards.Size = new Size(1185, 737);
             dgvCards.TabIndex = 0;
+            // 
+            // colCustomer
+            // 
+            colCustomer.FillWeight = 90F;
+            colCustomer.HeaderText = "Müşteri";
+            colCustomer.Name = "colCustomer";
+            colCustomer.ReadOnly = true;
+            // 
+            // colCard
+            // 
+            colCard.FillWeight = 150F;
+            colCard.HeaderText = "Kart";
+            colCard.Name = "colCard";
+            colCard.ReadOnly = true;
+            // 
+            // colExpM
+            // 
+            colExpM.FillWeight = 42.63958F;
+            colExpM.HeaderText = "Son Kull. Ay";
+            colExpM.Name = "colExpM";
+            colExpM.ReadOnly = true;
+            // 
+            // colExpY
+            // 
+            colExpY.FillWeight = 42.63958F;
+            colExpY.HeaderText = "Yıl";
+            colExpY.Name = "colExpY";
+            colExpY.ReadOnly = true;
+            // 
+            // colStatus
+            // 
+            colStatus.FillWeight = 42.63958F;
+            colStatus.HeaderText = "Durum";
+            colStatus.Name = "colStatus";
+            colStatus.ReadOnly = true;
+            // 
+            // colProvider
+            // 
+            colProvider.FillWeight = 42.63958F;
+            colProvider.HeaderText = "Sağlayıcı";
+            colProvider.Name = "colProvider";
+            colProvider.ReadOnly = true;
+            // 
+            // colCardLimit
+            // 
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle1.Format = "N2";
+            dataGridViewCellStyle1.NullValue = null;
+            colCardLimit.DefaultCellStyle = dataGridViewCellStyle1;
+            colCardLimit.FillWeight = 42.63958F;
+            colCardLimit.HeaderText = "Limit";
+            colCardLimit.Name = "colCardLimit";
+            colCardLimit.ReadOnly = true;
+            // 
+            // colDaily
+            // 
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle2.Format = "N2";
+            dataGridViewCellStyle2.NullValue = null;
+            colDaily.DefaultCellStyle = dataGridViewCellStyle2;
+            colDaily.FillWeight = 42.63958F;
+            colDaily.HeaderText = "Günlük";
+            colDaily.Name = "colDaily";
+            colDaily.ReadOnly = true;
+            // 
+            // colTxn
+            // 
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle3.Format = "N2";
+            dataGridViewCellStyle3.NullValue = null;
+            colTxn.DefaultCellStyle = dataGridViewCellStyle3;
+            colTxn.FillWeight = 42.63958F;
+            colTxn.HeaderText = "İşlem";
+            colTxn.Name = "colTxn";
+            colTxn.ReadOnly = true;
+            // 
+            // colVirtual
+            // 
+            colVirtual.FillWeight = 42.63958F;
+            colVirtual.HeaderText = "Sanal";
+            colVirtual.Name = "colVirtual";
+            colVirtual.ReadOnly = true;
+            // 
+            // colContactless
+            // 
+            colContactless.FillWeight = 42.63958F;
+            colContactless.HeaderText = "Temassız";
+            colContactless.Name = "colContactless";
+            colContactless.ReadOnly = true;
+            // 
+            // colBlocked
+            // 
+            colBlocked.FillWeight = 42.63958F;
+            colBlocked.HeaderText = "Blokeli";
+            colBlocked.Name = "colBlocked";
+            colBlocked.ReadOnly = true;
             // 
             // pnlRight
             // 
@@ -576,7 +672,7 @@
             // 
             label16.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             label16.AutoSize = true;
-            label16.Location = new Point(386, 9);
+            label16.Location = new Point(309, 9);
             label16.Name = "label16";
             label16.Size = new Size(35, 15);
             label16.TabIndex = 5;
@@ -586,7 +682,7 @@
             // 
             label15.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             label15.AutoSize = true;
-            label15.Location = new Point(189, 9);
+            label15.Location = new Point(147, 9);
             label15.Name = "label15";
             label15.Size = new Size(45, 15);
             label15.TabIndex = 4;
@@ -596,7 +692,7 @@
             // 
             label14.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             label14.AutoSize = true;
-            label14.Location = new Point(6, 9);
+            label14.Location = new Point(5, 9);
             label14.Name = "label14";
             label14.Size = new Size(28, 15);
             label14.TabIndex = 3;
@@ -606,10 +702,10 @@
             // 
             numTxnLimit.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             numTxnLimit.DecimalPlaces = 2;
-            numTxnLimit.Location = new Point(425, 7);
+            numTxnLimit.Location = new Point(346, 7);
             numTxnLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
             numTxnLimit.Name = "numTxnLimit";
-            numTxnLimit.Size = new Size(0, 23);
+            numTxnLimit.Size = new Size(75, 23);
             numTxnLimit.TabIndex = 2;
             numTxnLimit.ThousandsSeparator = true;
             // 
@@ -617,10 +713,10 @@
             // 
             numDailyLimit.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             numDailyLimit.DecimalPlaces = 2;
-            numDailyLimit.Location = new Point(240, 7);
+            numDailyLimit.Location = new Point(193, 7);
             numDailyLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
             numDailyLimit.Name = "numDailyLimit";
-            numDailyLimit.Size = new Size(0, 23);
+            numDailyLimit.Size = new Size(75, 23);
             numDailyLimit.TabIndex = 1;
             numDailyLimit.ThousandsSeparator = true;
             // 
@@ -628,10 +724,10 @@
             // 
             numCardLimit.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             numCardLimit.DecimalPlaces = 2;
-            numCardLimit.Location = new Point(40, 7);
+            numCardLimit.Location = new Point(33, 7);
             numCardLimit.Maximum = new decimal(new int[] { 100000000, 0, 0, 0 });
             numCardLimit.Name = "numCardLimit";
-            numCardLimit.Size = new Size(0, 23);
+            numCardLimit.Size = new Size(75, 23);
             numCardLimit.TabIndex = 0;
             numCardLimit.ThousandsSeparator = true;
             // 
@@ -732,102 +828,6 @@
             label13.Size = new Size(60, 15);
             label13.TabIndex = 13;
             label13.Text = "Önizleme:";
-            // 
-            // colCustomer
-            // 
-            colCustomer.FillWeight = 90F;
-            colCustomer.HeaderText = "Müşteri";
-            colCustomer.Name = "colCustomer";
-            colCustomer.ReadOnly = true;
-            // 
-            // colCard
-            // 
-            colCard.FillWeight = 150F;
-            colCard.HeaderText = "Kart";
-            colCard.Name = "colCard";
-            colCard.ReadOnly = true;
-            // 
-            // colExpM
-            // 
-            colExpM.FillWeight = 42.63958F;
-            colExpM.HeaderText = "Son Kull. Ay";
-            colExpM.Name = "colExpM";
-            colExpM.ReadOnly = true;
-            // 
-            // colExpY
-            // 
-            colExpY.FillWeight = 42.63958F;
-            colExpY.HeaderText = "Yıl";
-            colExpY.Name = "colExpY";
-            colExpY.ReadOnly = true;
-            // 
-            // colStatus
-            // 
-            colStatus.FillWeight = 42.63958F;
-            colStatus.HeaderText = "Durum";
-            colStatus.Name = "colStatus";
-            colStatus.ReadOnly = true;
-            // 
-            // colProvider
-            // 
-            colProvider.FillWeight = 42.63958F;
-            colProvider.HeaderText = "Sağlayıcı";
-            colProvider.Name = "colProvider";
-            colProvider.ReadOnly = true;
-            // 
-            // colCardLimit
-            // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle1.Format = "N2";
-            dataGridViewCellStyle1.NullValue = null;
-            colCardLimit.DefaultCellStyle = dataGridViewCellStyle1;
-            colCardLimit.FillWeight = 42.63958F;
-            colCardLimit.HeaderText = "Limit";
-            colCardLimit.Name = "colCardLimit";
-            colCardLimit.ReadOnly = true;
-            // 
-            // colDaily
-            // 
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle2.Format = "N2";
-            dataGridViewCellStyle2.NullValue = null;
-            colDaily.DefaultCellStyle = dataGridViewCellStyle2;
-            colDaily.FillWeight = 42.63958F;
-            colDaily.HeaderText = "Günlük";
-            colDaily.Name = "colDaily";
-            colDaily.ReadOnly = true;
-            // 
-            // colTxn
-            // 
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle3.Format = "N2";
-            dataGridViewCellStyle3.NullValue = null;
-            colTxn.DefaultCellStyle = dataGridViewCellStyle3;
-            colTxn.FillWeight = 42.63958F;
-            colTxn.HeaderText = "İşlem";
-            colTxn.Name = "colTxn";
-            colTxn.ReadOnly = true;
-            // 
-            // colVirtual
-            // 
-            colVirtual.FillWeight = 42.63958F;
-            colVirtual.HeaderText = "Sanal";
-            colVirtual.Name = "colVirtual";
-            colVirtual.ReadOnly = true;
-            // 
-            // colContactless
-            // 
-            colContactless.FillWeight = 42.63958F;
-            colContactless.HeaderText = "Temassız";
-            colContactless.Name = "colContactless";
-            colContactless.ReadOnly = true;
-            // 
-            // colBlocked
-            // 
-            colBlocked.FillWeight = 42.63958F;
-            colBlocked.HeaderText = "Blokeli";
-            colBlocked.Name = "colBlocked";
-            colBlocked.ReadOnly = true;
             // 
             // CardView
             // 
