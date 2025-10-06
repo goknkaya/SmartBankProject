@@ -209,6 +209,7 @@
             // 
             txtIdentityNumber.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             txtIdentityNumber.Location = new Point(121, 96);
+            txtIdentityNumber.MaxLength = 11;
             txtIdentityNumber.Name = "txtIdentityNumber";
             txtIdentityNumber.Size = new Size(153, 23);
             txtIdentityNumber.TabIndex = 12;

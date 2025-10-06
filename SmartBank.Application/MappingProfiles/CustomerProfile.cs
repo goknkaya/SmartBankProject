@@ -8,17 +8,16 @@ namespace SmartBank.Application.MappingProfiles
     {
         public CustomerProfile()
         {
-            // Entity -> Select DTO
+            // Entity -> Select DTO (null ise MinValue)
             CreateMap<Customer, SelectCustomerDto>()
-                // BirthDate null ise MinValue geç; UI zaten boş gösterecek
                 .ForMember(d => d.BirthDate, o => o.MapFrom(s => s.BirthDate ?? DateTime.MinValue));
 
-            // Create DTO -> Entity
+            // Create DTO -> Entity (default 01.01.0001 ise null'a çevir)
             CreateMap<CreateCustomerDto, Customer>()
                 .ForMember(d => d.BirthDate,
                     o => o.MapFrom(s => s.BirthDate == default ? (DateTime?)null : s.BirthDate));
 
-            // Update DTO -> Entity (yalnızca dolu alanları yaz)
+            // Update DTO -> Entity (sadece dolu alanlar)
             CreateMap<UpdateCustomerDto, Customer>()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }

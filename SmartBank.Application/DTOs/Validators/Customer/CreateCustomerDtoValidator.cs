@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentValidation;
+﻿using FluentValidation;
 using SmartBank.Application.DTOs.Customer;
 
 namespace SmartBank.Application.DTOs.Validators.Customer
@@ -26,25 +21,33 @@ namespace SmartBank.Application.DTOs.Validators.Customer
 
             RuleFor(x => x.TCKN)
                 .NotEmpty().WithMessage("TCKN boş olamaz.")
-                .Length(11).WithMessage("TCKN 11 haneli olmalıdır.");
+                .Length(11).WithMessage("TCKN 11 haneli olmalıdır.")
+                .Must(IsValidTckn).WithMessage("TCKN geçersiz. TCKN' nin son basamağı tüm rakamların toplamının birler basamağı olmalıdır.");
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Telefon boş olamaz.")
                 .Matches(@"^05\d{9}$").WithMessage("Geçerli bir telefon numarası giriniz.");
 
+            // M/F standardı
             RuleFor(x => x.Gender)
-                .NotEmpty().WithMessage("Cinsiyet boş olamaz.")
-                .Must(g => g == "M" || g == "F").WithMessage("Cinsiyet 'E' (Erkek) veya 'K' (Kadın) olmalıdır.");
+                .Must(g => string.IsNullOrWhiteSpace(g) || g is "M" or "F")
+                .WithMessage("Cinsiyet 'M' (Male) veya 'F' (Female) olmalıdır.");
 
             RuleFor(x => x.AddressLine)
-                .NotEmpty().WithMessage("Adres boş olamaz.")
                 .MaximumLength(250).WithMessage("Adres en fazla 250 karakter olabilir.");
+        }
 
-            RuleFor(x => x.City)
-                .NotEmpty().WithMessage("Şehir boş olamaz.");
+        private bool IsValidTckn(string t)
+        {
+            if (string.IsNullOrWhiteSpace(t) || t.Length != 11 || t[0] == '0' || !t.All(char.IsDigit))
+                return false;
 
-            RuleFor(x => x.Country)
-                .NotEmpty().WithMessage("Ülke boş olamaz.");
+            int[] d = t.Select(c => c - '0').ToArray();
+            int odd = d[0] + d[2] + d[4] + d[6] + d[8];
+            int even = d[1] + d[3] + d[5] + d[7];
+            int d10 = ((odd * 7) - even) % 10;
+            int d11 = (d.Take(10).Sum()) % 10;
+            return d[9] == d10 && d[10] == d11;
         }
     }
 }

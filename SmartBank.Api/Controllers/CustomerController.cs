@@ -42,22 +42,20 @@ public class CustomerController : ControllerBase
 
     // PUT /api/Customer/{id}
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerDto dto)
+    public async Task<ActionResult<SelectCustomerDto>> Update(int id, [FromBody] UpdateCustomerDto dto)
     {
         try
         {
             await _svc.UpdateAsync(id, dto);
-            return NoContent(); // 204
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
+            var updated = await _svc.GetByIdAsync(id);
+            return updated is null ? NotFound() : Ok(updated); // 200 + body
         }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
         }
     }
+
 
     // DELETE /api/Customer/{id}  (soft delete içeride)
     [HttpDelete("{id:int}")]
