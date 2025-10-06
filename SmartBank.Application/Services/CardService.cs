@@ -123,10 +123,9 @@ namespace SmartBank.Application.Services
             if (dto.TransactionLimit <= 0) throw new InvalidOperationException("İşlem limiti sıfırdan büyük olmalıdır.");
             if (dto.TransactionLimit > dto.DailyLimit) throw new InvalidOperationException("İşlem limiti günlük limiti aşamaz.");
 
-            // (8) Statü: A/B/C
-            var allowedStatuses = new[] { "A", "B", "C" };
-            if (string.IsNullOrWhiteSpace(dto.CardStatus) || !allowedStatuses.Contains(dto.CardStatus))
-                throw new InvalidOperationException("Geçersiz kart durumu. 'A', 'B' veya 'C' olmalıdır.");
+            // (8) Statü: YALNIZCA 'A'
+            if (string.IsNullOrWhiteSpace(dto.CardStatus) || dto.CardStatus.Trim() != "A")
+                throw new InvalidOperationException("Yeni kart sadece 'A' (Aktif) durumda oluşturulabilir.");
 
             // (9) PIN hash (SHA-256 hex 64)
             if (string.IsNullOrWhiteSpace(dto.PinHash) || dto.PinHash.Length != 64)
@@ -150,31 +149,43 @@ namespace SmartBank.Application.Services
             return _mapper.Map<SelectCardDto>(created);
         }
 
-
-        // Kart güncelleme
+        // Kart güncelleme (provider, issuer ve diğer create-only alanlar değiştirilemez)
+        // Kart güncelleme (provider, issuer, holder name ve flag'ler değiştirilemez)
         public async Task UpdateAsync(int id, UpdateCardDto dto)
         {
             var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == id && c.IsActive)
                 ?? throw new KeyNotFoundException("Güncellenecek kart bulunamadı veya pasif.");
 
-            // Sağlayıcı değişirse kontrol et
-            if (!string.IsNullOrWhiteSpace(dto.CardProvider))
+            // --- Değiştirilemez alanlar ---
+
+            // Provider (V/M/T) GÜNCELLENEMEZ
+            if (!string.IsNullOrWhiteSpace(dto.CardProvider) && dto.CardProvider != card.CardProvider)
+                throw new InvalidOperationException("Kart sağlayıcısı (provider) güncellenemez.");
+
+            // Issuer (banka) GÜNCELLENEMEZ
+            if (!string.IsNullOrWhiteSpace(dto.CardIssuerBank) && dto.CardIssuerBank != card.CardIssuerBank)
+                throw new InvalidOperationException("Kartı basan banka (issuer) güncellenemez.");
+
+            // Kart sahibi adı GÜNCELLENEMEZ (başka bir istemci gönderirse)
+            var holderProp = dto.GetType().GetProperty("CardHolderName");
+            if (holderProp != null)
             {
-                var allowedProviders = new[] { "V", "M", "T" };
-                if (dto.CardProvider.Length != 1 || !allowedProviders.Contains(dto.CardProvider))
-                    throw new InvalidOperationException("Kart sağlayıcısı yalnızca 'V', 'M' veya 'T' olabilir.");
-
-                var exists = await _dbContext.Cards.AnyAsync(c =>
-                    c.CustomerId == card.CustomerId &&
-                    c.CardProvider == dto.CardProvider &&
-                    c.CardStatus == "A" &&
-                    c.Id != id &&
-                    c.IsActive);
-                if (exists)
-                    throw new InvalidOperationException("Bu müşteri için aynı sağlayıcıya ait aktif bir kart zaten mevcut.");
-
-                card.CardProvider = dto.CardProvider;
+                var newHolder = holderProp.GetValue(dto) as string;
+                if (!string.IsNullOrWhiteSpace(newHolder) && !string.Equals(newHolder, card.CardHolderName, StringComparison.Ordinal))
+                    throw new InvalidOperationException("Kart sahibi adı güncellenemez.");
             }
+
+            // Flag'ler GÜNCELLENEMEZ
+            if (dto.IsVirtual.HasValue && dto.IsVirtual.Value != card.IsVirtual)
+                throw new InvalidOperationException("Sanal (IsVirtual) değeri güncellenemez.");
+            if (dto.IsContactless.HasValue && dto.IsContactless.Value != card.IsContactless)
+                throw new InvalidOperationException("Temassız (IsContactless) değeri güncellenemez.");
+            if (dto.IsBlocked.HasValue && dto.IsBlocked.Value != card.IsBlocked)
+                throw new InvalidOperationException("Bloke (IsBlocked) değeri güncellenemez.");
+
+            // (CardType / Currency / Expiry / PAN / Customer Update DTO'da yok; gelse de değiştirmiyoruz)
+
+            // --- İzin verilen güncellemeler ---
 
             // Statü (A/B/C)
             if (!string.IsNullOrWhiteSpace(dto.CardStatus))
@@ -196,34 +207,29 @@ namespace SmartBank.Application.Services
             if (dto.DailyLimit.HasValue) card.DailyLimit = dto.DailyLimit.Value;
             if (dto.TransactionLimit.HasValue) card.TransactionLimit = dto.TransactionLimit.Value;
 
-            // Diğer opsiyoneller
+            // Diğer opsiyoneller (gönderiliyorsa izin verilecekler)
             if (dto.FailedPinAttempts.HasValue && dto.FailedPinAttempts < 0)
                 throw new InvalidOperationException("Hatalı PIN deneme sayısı negatif olamaz.");
             if (dto.FailedPinAttempts.HasValue) card.FailedPinAttempts = dto.FailedPinAttempts.Value;
 
-            if (!string.IsNullOrWhiteSpace(dto.CardIssuerBank))
-            {
-                if (dto.CardIssuerBank.Length > 100) throw new InvalidOperationException("Kartı basan banka adı çok uzun.");
-                card.CardIssuerBank = dto.CardIssuerBank;
-            }
-
             if (!string.IsNullOrWhiteSpace(dto.CardStatusChangeReason))
             {
-                if (dto.CardStatusChangeReason.Length > 250) throw new InvalidOperationException("Durum değişim nedeni en fazla 250 karakter olabilir.");
+                if (dto.CardStatusChangeReason.Length > 250)
+                    throw new InvalidOperationException("Durum değişim nedeni en fazla 250 karakter olabilir.");
                 card.CardStatusChangeReason = dto.CardStatusChangeReason;
             }
 
-            if (dto.IsBlocked.HasValue) card.IsBlocked = dto.IsBlocked.Value;
-            if (dto.IsVirtual.HasValue) card.IsVirtual = dto.IsVirtual.Value;
-            if (dto.IsContactless.HasValue) card.IsContactless = dto.IsContactless.Value;
+            // Artık flag set ETMİYORUZ (yasaklandı)
+            // if (dto.IsBlocked.HasValue)     card.IsBlocked     = dto.IsBlocked.Value;
+            // if (dto.IsVirtual.HasValue)     card.IsVirtual     = dto.IsVirtual.Value;
+            // if (dto.IsContactless.HasValue) card.IsContactless = dto.IsContactless.Value;
+
             if (dto.LastUsedAt.HasValue) card.LastUsedAt = dto.LastUsedAt.Value;
-            if (dto.ParentCardId.HasValue) card.ParentCardId = dto.ParentCardId.Value;
+            if (dto.ParentCardId.HasValue) card.ParentCardId = dto.ParentCardId.Value; // istersen bunu da kilitleyebilirsin
 
             card.UpdatedAt = DateTime.Now;
             await _dbContext.SaveChangesAsync();
         }
-
-
 
         // Kart silme (soft delete)
         public async Task DeleteAsync(int id)

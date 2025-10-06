@@ -562,18 +562,18 @@
             // 
             // pbBank
             // 
-            pbBank.Location = new Point(292, 12);
+            pbBank.Location = new Point(308, 12);
             pbBank.Name = "pbBank";
-            pbBank.Size = new Size(128, 89);
+            pbBank.Size = new Size(112, 89);
             pbBank.SizeMode = PictureBoxSizeMode.StretchImage;
             pbBank.TabIndex = 10;
             pbBank.TabStop = false;
             // 
             // pbBrand
             // 
-            pbBrand.Location = new Point(292, 107);
+            pbBrand.Location = new Point(308, 107);
             pbBrand.Name = "pbBrand";
-            pbBrand.Size = new Size(128, 89);
+            pbBrand.Size = new Size(112, 89);
             pbBrand.SizeMode = PictureBoxSizeMode.StretchImage;
             pbBrand.TabIndex = 9;
             pbBrand.TabStop = false;

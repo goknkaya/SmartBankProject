@@ -38,9 +38,11 @@ namespace SmartBank.Application.DTOs.Validators.Card
                 .NotEmpty()
                 .Length(3).WithMessage("Para birimi 3 haneli olmalı (örn: TRY).");
 
+            // CardStatus: YALNIZCA 'A' (Active)
             RuleFor(x => x.CardStatus)
                 .NotEmpty().WithMessage("Kart durumu boş olamaz.")
-                .MaximumLength(1);
+                .Must(cs => cs == "A")
+                .WithMessage("Yeni kart sadece 'A' (Aktif) durumda oluşturulabilir.");
 
             RuleFor(x => x.CardType)
             .NotEmpty().WithMessage("Card Type boş olamaz.")

@@ -149,6 +149,7 @@ namespace SmartBank.Desktop.Win.Views
             cboExpY.SelectedIndexChanged += (_, __) => UpdatePreview();
             cboProvider.SelectedIndexChanged += (_, __) => UpdatePreview();
             cboBank.SelectedIndexChanged += (_, __) => UpdatePreview();
+            cboCustomer.SelectedIndexChanged += (_, __) => UpdateCardHolderFromCustomer();
         }
 
         #endregion
@@ -188,11 +189,15 @@ namespace SmartBank.Desktop.Win.Views
             if (_cards.Count > 0)
             {
                 dgvCards.ClearSelection();
+                dgvCards.CurrentCell = dgvCards.Rows[0].Cells[0];
                 dgvCards.Rows[0].Selected = true;
-                FillForm(_cards[0]);
+
+                _selected = dgvCards.Rows[0].DataBoundItem as SelectCardDto;
+                if (_selected != null) FillForm(_selected);
             }
             else
             {
+                _selected = null;
                 ClearForm();
             }
         }
@@ -209,6 +214,75 @@ namespace SmartBank.Desktop.Win.Views
             public Image? Logo { get; }
             public BankTheme(Color bg, Color fg, Image? logo = null) { Bg = bg; Fg = fg; Logo = logo; }
         }
+
+        // --- CREATE'de açık, EDIT'te kilitlenecek alanları ayarlayan helper ---
+        private void SetEditLocks()
+        {
+            bool create = _mode == ViewMode.Create;
+            bool edit = _mode == ViewMode.Edit;
+
+            // ---------- CREATE-ONLY (EDIT'te kapalı/readonly) ----------
+            cboCustomer.Enabled = create;
+
+            if (this.Controls.Find("txtCardNumber", true).FirstOrDefault() is TextBox tPan)
+                tPan.ReadOnly = !create;
+
+            cboExpM.Enabled = create;
+            cboExpY.Enabled = create;
+            cboType.Enabled = create; 
+            cboCurrency.Enabled = create;
+            cboProvider.Enabled = create;
+            cboBank.Enabled = create;
+
+            // Kart sahibi adı: Edit'te yazılamasın
+            if (this.Controls.Find("txtCardHolder", true).FirstOrDefault() is TextBox tHolder)
+                tHolder.ReadOnly = !create;
+
+            if (this.Controls.Find("txtParentCardId", true).FirstOrDefault() is TextBox tParent)
+                tParent.ReadOnly = !create;
+
+            // ---------- Guncelleme sırasında Flagların tıklanabilirliği kaldırıldı ----------
+            void LockFlag(CheckBox cb)
+            {
+                if (cb == null) return;
+                if (create)
+                {
+                    cb.Enabled = true;
+                    cb.AutoCheck = true;
+                    cb.TabStop = true;
+                }
+                else
+                {
+                    cb.Enabled = false;
+                    cb.AutoCheck = false;
+                    cb.TabStop = false;
+                }
+            }
+
+            LockFlag(chkVirtual);
+            LockFlag(chkContactless);
+            LockFlag(chkBlocked);
+
+            // ---------- EDIT'te açık kalacaklar ----------
+            cboStatus.Enabled = edit;
+
+            // Limitler: Edit'te düzenlenebilir
+            numCardLimit.Enabled = edit;
+            numDailyLimit.Enabled = edit;
+            numTxnLimit.Enabled = edit;
+
+            // FailedPinAttempts: aynı davranış (istersen edit'e özel yapabilirsin)
+            if (this.Controls.Find("numFailedPinAttempts", true).FirstOrDefault() is NumericUpDown pinFail)
+                pinFail.Enabled = edit || create;
+
+            // Açıklama metni: Edit'te yazılabilir
+            if (this.Controls.Find("txtReason", true).FirstOrDefault() is TextBox tReason)
+                tReason.ReadOnly = !edit;
+
+            // Önizleme her zaman aktif
+            pnlPreview.Enabled = true;
+        }
+
 
         private static string NormalizeBank(string s)
         {
@@ -378,6 +452,14 @@ namespace SmartBank.Desktop.Win.Views
             UpdatePreview();
         }
 
+        private void UpdateCardHolderFromCustomer()
+        {
+            if (_mode != ViewMode.Create) return;
+            var name = (cboCustomer.Text ?? "").Trim();   // DisplayMember = "FullName"
+            txtCardHolder.Text = name;
+            UpdatePreview();
+        }
+
         private void EnterViewMode()
         {
             _mode = ViewMode.List;
@@ -390,15 +472,19 @@ namespace SmartBank.Desktop.Win.Views
         {
             _mode = ViewMode.Create;
             ClearForm();
+            cboStatus.SelectedValue = "A";
             ToggleForm(true);
+            SetEditLocks(); // <-- EKLE
             miSave.Enabled = miCancel.Enabled = true;
             miInsert.Enabled = miUpdate.Enabled = miDelete.Enabled = false;
         }
+
         private void EnterEditMode()
         {
             if (_selected == null) return;
             _mode = ViewMode.Edit;
             ToggleForm(true);
+            SetEditLocks(); // <-- EKLE
             miSave.Enabled = miCancel.Enabled = true;
             miInsert.Enabled = miUpdate.Enabled = miDelete.Enabled = false;
         }
@@ -599,17 +685,20 @@ namespace SmartBank.Desktop.Win.Views
             dto = new UpdateCardDto();
             error = "";
 
-            // Yalnızca güncellenebilir alanlar
+            // Validator "Id > 0" uyarısını sustur
+            dto.Id = _selected?.Id ?? 0;
+
+            // Sadece güncellenebilir alanlar
             dto.CardStatus = (string)cboStatus.SelectedValue!;
             dto.CardStatusDescription = txtReason.Text.Trim();
+
             dto.IsBlocked = chkBlocked.Checked;
             dto.IsContactless = chkContactless.Checked;
             dto.IsVirtual = chkVirtual.Checked;
+
             dto.CardLimit = numCardLimit.Value;
             dto.DailyLimit = numDailyLimit.Value;
             dto.TransactionLimit = numTxnLimit.Value;
-            dto.CardProvider = (string)cboProvider.SelectedValue!;
-            dto.CardIssuerBank = cboBank.Text.Trim();
 
             return true;
         }
@@ -705,7 +794,7 @@ namespace SmartBank.Desktop.Win.Views
             var trimmed = body.Trim();
             return string.IsNullOrEmpty(trimmed) ? null : trimmed;
         }
-        
+
         private static string BuildCaption(ApiException ex, string fallback)
         {
             try
