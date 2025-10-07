@@ -2,6 +2,7 @@
 using SmartBank.Application.Interfaces;
 using SmartBank.Application.DTOs.Transaction;
 using System.ComponentModel.DataAnnotations;
+using SmartBank.Application.Services; // SignatureUtil için
 
 namespace SmartBank.Api.Controllers
 {

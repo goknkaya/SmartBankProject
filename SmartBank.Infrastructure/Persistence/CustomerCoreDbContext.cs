@@ -40,6 +40,9 @@ namespace SmartBank.Infrastructure.Persistence
                 t.Property(x => x.AcquirerRef).HasMaxLength(64);
                 t.HasIndex(x => x.AcquirerRef);
 
+                t.Property(x => x.SignatureHash).HasMaxLength(64);
+                t.HasIndex(x => x.SignatureHash);
+
                 // Kart silinince transaction'lar silinmesin
                 t.HasOne(x => x.Card)
                  .WithMany()
@@ -52,9 +55,16 @@ namespace SmartBank.Infrastructure.Persistence
             // =======================
             modelBuilder.Entity<ClearingBatch>(b =>
             {
-                b.HasIndex(x => x.FileHash).IsUnique();          // aynı dosya iki kez işlenmesin
+                // Aynı IN dosyası ikinci kez işlenmesin (OUT'u kilitlemesin)
+                b.HasIndex(x => new { x.Direction, x.FileHash })
+                 .IsUnique()
+                 .HasFilter("[Direction] = 'IN' AND [FileHash] IS NOT NULL");
+
+                // Listeleme senaryosu hızlansın
+                b.HasIndex(x => new { x.Direction, x.SettlementDate, x.CreatedAt });
+
                 b.Property(x => x.Direction).HasMaxLength(3).IsRequired(); // IN/OUT
-                b.Property(x => x.Status).HasMaxLength(1).IsRequired();    // N/P/M/E
+                b.Property(x => x.Status).HasMaxLength(1).IsRequired();    // N/P/E
                 b.Property(x => x.FileName).HasMaxLength(255);
                 b.Property(x => x.FileHash).HasMaxLength(64);
                 b.Property(x => x.Notes).HasMaxLength(250);
@@ -80,18 +90,31 @@ namespace SmartBank.Infrastructure.Persistence
                  .HasForeignKey(x => x.CardId)
                  .OnDelete(DeleteBehavior.NoAction);
 
+                // Listeleme/Retry
                 r.HasIndex(x => new { x.BatchId, x.MatchStatus });
+
+                // Aynı batch’te aynı satır numarası bir kez
+                r.HasIndex(x => new { x.BatchId, x.LineNumber }).IsUnique();
+
+                // Aynı Transaction aynı batch’te yalnızca 1 satırda 'M' olsun
+                r.HasIndex(x => new { x.BatchId, x.TransactionId })
+                 .IsUnique()
+                 .HasFilter("[TransactionId] IS NOT NULL AND [MatchStatus] = 'M'");
+
+                // Eşleştirme için composite index (signature'a geçene kadar iş görür)
+                r.HasIndex(x => new { x.CardLast4, x.Amount, x.Currency, x.TransactionDate, x.MerchantName });
+
+                // SignatureHash alanı (ek indeks)
+                r.Property(x => x.SignatureHash).HasMaxLength(64);
+                r.HasIndex(x => x.SignatureHash);
+
                 r.Property(x => x.Currency).HasMaxLength(3).IsRequired();
-                r.Property(x => x.MatchStatus).HasMaxLength(1).IsRequired(); // P/M/N/E
+                r.Property(x => x.MatchStatus).HasMaxLength(1).IsRequired(); // P/M/N/X/E
                 r.Property(x => x.MerchantName).HasMaxLength(100);
                 r.Property(x => x.CardLast4).HasMaxLength(4);
                 r.Property(x => x.Amount).HasColumnType("decimal(18,2)");
-
-                // aynı batch içinde aynı Transaction sadece 1 kere olsun
-                r.HasIndex(x => new { x.BatchId, x.TransactionId })
-                 .IsUnique()
-                 .HasFilter("[TransactionId] IS NOT NULL");
             });
+
 
             // =======================
             // SwitchMessage

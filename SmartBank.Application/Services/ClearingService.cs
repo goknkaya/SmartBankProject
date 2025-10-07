@@ -127,12 +127,16 @@ namespace SmartBank.Application.Services
                 .ToListAsync();
 
             var sb = new StringBuilder();
-            sb.AppendLine("CardLast4;Amount;Currency;TransactionDate;MerchantName");
+            sb.AppendLine("CardLast4;Amount;Currency;TransactionDate;MerchantName;SignatureHash");
 
             foreach (var t in txs)
             {
                 var last4 = GetLast4(t.Card?.CardNumber);
-                sb.AppendLine($"{last4};{t.Amount};{t.Currency};{t.TransactionDate:yyyy-MM-ddTHH:mm:ss};{t.Description}");
+                var sig = string.IsNullOrWhiteSpace(t.SignatureHash)
+                    ? ComputeSignature(last4, t.Amount, t.Currency, t.TransactionDate, t.Description)
+                    : t.SignatureHash;
+
+                sb.AppendLine($"{last4};{t.Amount};{t.Currency};{t.TransactionDate:yyyy-MM-ddTHH:mm:ss};{t.Description};{sig}");
             }
 
             var bytes = Encoding.UTF8.GetBytes(sb.ToString());
@@ -360,7 +364,12 @@ namespace SmartBank.Application.Services
 
             var merchant = string.IsNullOrWhiteSpace(parts[4]) ? null : parts[4].Trim();
 
-            // 4) Geçerli satır -> P (işlenecek)
+            // 4) OUT dosyasından geldiyse 6. kolon SignatureHash olabilir (opsiyonel)
+            var providedSig = parts.Length >= 6 ? parts[5]?.Trim() : null;
+            var computedSig = ComputeSignature(last4, amount, currency, txDate, merchant);
+            var finalSig = string.IsNullOrWhiteSpace(providedSig) ? computedSig : providedSig;
+
+            // 5) Geçerli satır -> P (işlenecek)
             return new ClearingRecord
             {
                 BatchId = batchId,
@@ -371,24 +380,19 @@ namespace SmartBank.Application.Services
                 TransactionDate = txDate,
                 MerchantName = merchant,
                 MatchStatus = "P",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                SignatureHash = finalSig
             };
         }
 
         // Eşleştirme: hatalıysa E, bulunamazsa N, bulunursa M
         private async Task TryMatchAsync(ClearingRecord record)
         {
-            // Transaction eşleştirmeye çalış
-            var trx = await _db.Transactions
-                .FirstOrDefaultAsync(t =>
-                    t.CardId != null &&
-                    t.Card.CardNumber.EndsWith(record.CardLast4 ?? "") &&
-                    t.Amount == record.Amount &&
-                    t.Currency == record.Currency &&
-                    t.TransactionDate == record.TransactionDate &&
-                    t.Description == record.MerchantName);
+            var sig = ComputeSignature(record.CardLast4, record.Amount, record.Currency, record.TransactionDate, record.MerchantName);
 
-            // Hiç eşleşen yoksa → N
+            var trx = await _db.Transactions.FirstOrDefaultAsync(t =>
+                t.Status == "S" && t.SignatureHash == sig);
+
             if (trx == null)
             {
                 record.MatchStatus = "N";
@@ -396,25 +400,21 @@ namespace SmartBank.Application.Services
                 return;
             }
 
-            // Daha önce başka bir kayıt bu transaction’a eşleşmiş mi?
             var alreadyMatched = await _db.ClearingRecords
-                .AnyAsync(r => r.TransactionId == trx.Id && r.Id != record.Id && r.MatchStatus == "M");
+                .AnyAsync(r => r.BatchId == record.BatchId && r.TransactionId == trx.Id && r.Id != record.Id && r.MatchStatus == "M");
 
             if (alreadyMatched)
             {
-                // Aynı transaction’a ikinci kez denk geldi → X
                 record.MatchStatus = "X";
                 record.ErrorMessage = "Aynı işlem başka satırda zaten eşleşmiş.";
             }
             else
             {
-                // İlk eşleşme → M
                 record.TransactionId = trx.Id;
                 record.MatchStatus = "M";
                 record.ErrorMessage = null;
             }
         }
-
 
         private static string GetLast4(string? pan)
         {
@@ -437,5 +437,18 @@ namespace SmartBank.Application.Services
             var hash = sha.ComputeHash(bytes);
             return Convert.ToHexString(hash).ToLowerInvariant();
         }
+
+        private static string ComputeSignature(string? last4, decimal amount, string currency, DateTime? txDate, string? merchant)
+        {
+            var l4 = NormalizeLast4(last4) ?? "";
+            var ccy = (currency ?? "").Trim().ToUpperInvariant();
+            var d = txDate?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "";
+            var m = (merchant ?? "").Trim();
+
+            var raw = $"{l4}|{amount:0.####}|{ccy}|{d}|{m}";
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            return Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(raw))).ToLowerInvariant();
+        }
+
     }
 }

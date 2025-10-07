@@ -41,5 +41,8 @@ namespace SmartBank.Domain.Entities
         public string? ErrorMessage { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        [MaxLength(64)]
+        public string? SignatureHash { get; set; }
     }
 }

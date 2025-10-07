@@ -5,6 +5,7 @@ using SmartBank.Application.DTOs.Transaction;
 using SmartBank.Application.Interfaces;
 using SmartBank.Domain.Entities;
 using SmartBank.Infrastructure.Persistence;
+using SmartBank.Application.Services; // SignatureUtil için
 
 namespace SmartBank.Application.Services
 {
@@ -29,7 +30,7 @@ namespace SmartBank.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Currency) || dto.Currency.Length != 3)
                 throw new InvalidOperationException("Para birimi 3 haneli olmalıdır (örn: TRY).");
 
-            // 1) Kart + durum kontrolü (tracking açık olmalı çünkü limiti güncelleyeceğiz)
+            // 1) Kart + durum kontrolü
             var card = await _dbContext.Cards
                 .FirstOrDefaultAsync(c => c.Id == dto.CardId && c.IsActive);
 
@@ -39,7 +40,7 @@ namespace SmartBank.Application.Services
             if (card.IsBlocked)
                 throw new InvalidOperationException("Bu kart blokeli olduğundan işlem yapılamaz.");
 
-            // 2) Günlük harcama (bugün) — sadece başarılı ve reverse edilmemiş işlemler
+            // 2) Günlük harcama (bugün)
             var todayUtc = DateTime.Now.Date;
             var spentToday = await _dbContext.Transactions
                 .Where(t => t.CardId == dto.CardId
@@ -49,12 +50,10 @@ namespace SmartBank.Application.Services
                             && t.TransactionDate < todayUtc.AddDays(1))
                 .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
-            // 3) Limit kontrolleri (sıra ÖNEMLİ)
-            // 3.1) Tek işlem limiti
+            // 3) Limit kontrolleri
             if (dto.Amount > card.TransactionLimit)
                 throw new InvalidOperationException("İşlem tutarı, tek işlem limitini aşıyor.");
 
-            // 3.2) Günlük limit (bugün harcanan + yeni işlem)
             var willBeToday = spentToday + dto.Amount;
             if (willBeToday > card.DailyLimit)
             {
@@ -63,11 +62,10 @@ namespace SmartBank.Application.Services
                     $"İşlem tutarı, günlük limiti aşıyor. Kalan günlük limit: {kalan:0.##}");
             }
 
-            // 3.3) Kart bakiyesi (kalan limit)
             if (dto.Amount > card.CardLimit)
                 throw new InvalidOperationException("Yetersiz bakiye.");
 
-            // 4) Atomik işlem (kart limitini düş + transaction kaydını ekle)
+            // 4) Atomik işlem
             using var tx = await _dbContext.Database.BeginTransactionAsync();
             try
             {
@@ -81,6 +79,15 @@ namespace SmartBank.Application.Services
                     Status = "S",
                     IsReversed = false
                 };
+
+                // >>> NEW: SignatureHash doldur
+                transaction.SignatureHash = SignatureUtil.ComputeFromPan(
+                    pan: card.CardNumber,                   // PAN varsa; maskeli bile olsa util son 4’ü normalize ediyor
+                    amount: transaction.Amount,
+                    currency: transaction.Currency,
+                    txDate: transaction.TransactionDate,
+                    merchant: transaction.Description
+                );
 
                 card.CardLimit -= dto.Amount;
                 card.UpdatedAt = DateTime.Now;
@@ -108,7 +115,7 @@ namespace SmartBank.Application.Services
                 .Select(t => new SelectTransactionDto
                 {
                     Id = t.Id,
-                    CardId = t.CardId,
+                    CardId = (int)t.CardId,
                     Currency = t.Currency,
                     Amount = t.Amount,
                     TransactionDate = t.TransactionDate,
