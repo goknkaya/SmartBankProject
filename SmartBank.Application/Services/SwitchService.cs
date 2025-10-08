@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SmartBank.Application.DTOs.Switching;
@@ -22,53 +23,36 @@ namespace SmartBank.Application.Services
 
         public async Task<SelectSwitchMessageDto> ProcessMessageAsync(CreateSwitchMessageDto dto)
         {
-            // -- 0) Normalize
+            // 0) Normalize
             var cleanPan = (dto.PAN ?? "").Replace(" ", "");
             var bin = cleanPan.Length >= 6 ? cleanPan[..6] : cleanPan;
             var cur = (dto.Currency ?? "TRY").ToUpperInvariant();
-            var txTime = (dto.TxnTime ?? DateTime.Now).ToUniversalTime();
+            var txTime = (dto.TxnTime ?? DateTime.Now); // local time
 
-            // -- 1) Issuer
+            // 1) Issuer
             var issuer = await _dbContext.CardBins
                 .Where(b => b.IsActive && b.Bin == bin)
                 .Select(b => b.Issuer)
                 .FirstOrDefaultAsync() ?? "Unknown";
 
-            // -- 2) ExternalId (aynı body -> aynı id)
-            var externalId = $"{dto.Acquirer}|{bin}|{dto.Amount:0.00}|{cur}|{txTime:yyyyMMddHHmmss}";
+            // 2) ExternalId (InvariantCulture)
+            var externalId = string.Create(CultureInfo.InvariantCulture,
+                $"{dto.Acquirer}|{bin}|{dto.Amount:0.00}|{cur}|{txTime:yyyyMMddHHmmss}");
 
-            // -- 3) Idempotency (uygulama katmanı) — insert'ten ÖNCE
-            var alreadyExists = await _dbContext.SwitchMessages.AsNoTracking().AnyAsync(x =>
-                x.Acquirer == dto.Acquirer &&
-                x.ExternalId == externalId
-            // .Status == "Approved"  // sadece Approved'a sıkılamak istersen aç
-            );
+            // 3) Idempotency: varsa aynı kaydı dön
+            var existing = await _dbContext.SwitchMessages.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ExternalId == externalId);
+            if (existing != null)
+                return _mapper.Map<SelectSwitchMessageDto>(existing);
 
-            if (alreadyExists)
-            {
-                return new SelectSwitchMessageDto
-                {
-                    Id = 0,
-                    PANMasked = MaskPan(cleanPan),
-                    Bin = bin,
-                    Amount = dto.Amount,
-                    Currency = cur,
-                    Acquirer = dto.Acquirer,
-                    Issuer = issuer,
-                    Status = "Declined",
-                    CreatedAt = DateTime.Now,
-                    TransactionId = null
-                };
-            }
-
-            // -- 4) Mesajı ekle (DB unique index fallback'i ile)
+            // 4) Mesajı ekle
             var msg = new SwitchMessage
             {
                 PANMasked = MaskPan(cleanPan),
                 Bin = bin,
                 Amount = dto.Amount,
                 Currency = cur,
-                Acquirer = dto.Acquirer,
+                Acquirer = string.IsNullOrWhiteSpace(dto.Acquirer) ? "DemoPOS" : dto.Acquirer.Trim(),
                 Issuer = issuer,
                 Status = "Pending",
                 CreatedAt = DateTime.Now,
@@ -80,8 +64,14 @@ namespace SmartBank.Application.Services
                 _dbContext.SwitchMessages.Add(msg);
                 await _dbContext.SaveChangesAsync();
             }
-            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2601 or 2627)
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2601 or 2627) // unique violation
             {
+                var dup = await _dbContext.SwitchMessages.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.ExternalId == externalId);
+                if (dup != null)
+                    return _mapper.Map<SelectSwitchMessageDto>(dup);
+
+                // çok düşük olasılık fallback
                 return new SelectSwitchMessageDto
                 {
                     Id = 0,
@@ -97,21 +87,20 @@ namespace SmartBank.Application.Services
                 };
             }
 
-            await LogAsync(msg.Id, "Received", "INFO", "Mesaj alındı",
-                payloadIn: System.Text.Json.JsonSerializer.Serialize(dto));
+            await LogAsync(msg.Id, "Received", "INFO", "Mesaj alındı", payloadIn: ToJson(dto));
 
-            // -- 5) Basit kurallar
+            // 5) Basit karar kuralları
             if (issuer == "Unknown" || dto.Amount <= 0)
             {
                 msg.Status = "Declined";
                 await _dbContext.SaveChangesAsync();
-                await LogAsync(msg.Id, "Responded", "INFO", "Declined");
+                await LogAsync(msg.Id, "Responded", "INFO", "Declined", payloadOut: "{\"status\":\"Declined\"}");
                 return _mapper.Map<SelectSwitchMessageDto>(msg);
             }
 
-            // -- 6) Kart ve muhtemel tx duplicate guard
-            // (Gerçekte tam PAN ile eşleştir; demo için last4).
-            string last4 = cleanPan.Length >= 4 ? cleanPan[^4..] : cleanPan;
+            // 6) Kart eşleşmesi ve duplicate tx guard (demo: last4)
+            var last4 = cleanPan.Length >= 4 ? cleanPan[^4..] : cleanPan;
+
             var card = await _dbContext.Cards.AsNoTracking()
                 .OrderByDescending(c => c.Id)
                 .FirstOrDefaultAsync(c => c.CardNumber.Replace(" ", "").EndsWith(last4));
@@ -121,41 +110,45 @@ namespace SmartBank.Application.Services
 
             if (card != null)
             {
-                var existsTx = await _dbContext.Transactions.AsNoTracking().AnyAsync(t =>
-                    t.CardId == card.Id &&
-                    t.Amount == dto.Amount &&
-                    t.Currency == cur &&
-                    t.TransactionDate >= txTime.AddMinutes(-1) &&
-                    t.TransactionDate <= txTime.AddMinutes(1));
+                var existsByRef = await _dbContext.Transactions.AsNoTracking()
+                    .AnyAsync(t => t.AcquirerRef == msg.ExternalId && t.CardId == card.Id);
 
-                if (!existsTx)
+                var existsByWindow = await _dbContext.Transactions.AsNoTracking()
+                    .AnyAsync(t =>
+                        t.CardId == card.Id &&
+                        t.Amount == dto.Amount &&
+                        t.Currency == cur &&
+                        t.TransactionDate >= txTime.AddMinutes(-1) &&
+                        t.TransactionDate <= txTime.AddMinutes(1));
+
+                if (!existsByRef && !existsByWindow)
                 {
                     var tx = new Transaction
                     {
                         CardId = card.Id,
                         Currency = cur,
                         Amount = dto.Amount,
-                        Status = "S",
+                        Status = "S", // Success
                         TransactionDate = txTime,
-                        Description = dto.MerchantName ?? $"{dto.Acquirer}-{issuer}",
+                        Description = dto.MerchantName ?? $"{msg.Acquirer}-{issuer}",
                         IsReversed = false,
                         AcquirerRef = msg.ExternalId
                     };
+
                     _dbContext.Transactions.Add(tx);
                     await _dbContext.SaveChangesAsync();
+
                     msg.TransactionId = tx.Id;
                 }
             }
 
-            // -- 7) Son kararı kaydet
+            // 7) Karar & log
             msg.Status = "Approved";
             await _dbContext.SaveChangesAsync();
-            await LogAsync(msg.Id, "Responded", "INFO", "Approved",
-                payloadOut: "{\"status\":\"Approved\"}");
+            await LogAsync(msg.Id, "Responded", "INFO", "Approved", payloadOut: "{\"status\":\"Approved\"}");
 
             return _mapper.Map<SelectSwitchMessageDto>(msg);
         }
-
 
         public async Task<List<SelectSwitchMessageDto>> GetMessagesAsync(string? status = null, string? issuer = null)
         {
@@ -167,27 +160,27 @@ namespace SmartBank.Application.Services
             return _mapper.Map<List<SelectSwitchMessageDto>>(list);
         }
 
-        public async Task<List<object>> GetLogsAsync(int messageId)
+        public async Task<List<SwitchLogDto>> GetLogsAsync(int messageId)
         {
             return await _dbContext.SwitchLogs
                 .AsNoTracking()
                 .Where(l => l.MessageId == messageId)
                 .OrderBy(l => l.Id)
-                .Select(l => new
+                .Select(l => new SwitchLogDto
                 {
-                    l.Stage,
-                    l.Level,
-                    l.Note,
-                    l.CreatedAt,
-                    l.PayloadIn,
-                    l.PayloadOut
+                    Stage = l.Stage,
+                    Level = l.Level,
+                    Note = l.Note,
+                    CreatedAt = l.CreatedAt,
+                    PayloadIn = l.PayloadIn,
+                    PayloadOut = l.PayloadOut
                 })
-                .Cast<object>()
                 .ToListAsync();
         }
 
         // ------------- helpers -------------
-        private async Task LogAsync(int msgId, string stage, string level, string? note, string? payloadIn = null, string? payloadOut = null)
+        private async Task LogAsync(int msgId, string stage, string level, string? note,
+                                    string? payloadIn = null, string? payloadOut = null)
         {
             _dbContext.SwitchLogs.Add(new SwitchLog
             {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SmartBank.Application.DTOs.Switching
 {
-    public class CreateSwitchMessageDto
+    public sealed class CreateSwitchMessageDto
     {
         public string PAN { get; set; } = "";
         public decimal Amount { get; set; }
@@ -16,3 +16,4 @@ namespace SmartBank.Application.DTOs.Switching
         public string? MerchantName { get; set; }
     }
 }
+

@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SmartBank.Desktop.Win.Core;
@@ -18,6 +15,7 @@ namespace SmartBank.Desktop.Win.Views
         private readonly BindingSource _bsMsgs = new();
         private readonly BindingSource _bsLogs = new();
         private bool _loadedOnce = false;
+        private bool _loadingLogs = false; // re-entrancy guard
 
         public SwitchView(ApiClient client)
         {
@@ -31,6 +29,8 @@ namespace SmartBank.Desktop.Win.Views
             this.Load += async (_, __) => await LoadOnStartupAsync();
         }
 
+        // ---------------- Startup ----------------
+
         private async Task LoadOnStartupAsync()
         {
             if (_loadedOnce) return;
@@ -39,7 +39,6 @@ namespace SmartBank.Desktop.Win.Views
             try
             {
                 await LoadMessagesAsync();
-
                 // İlk satırı seç -> SelectionChanged tetiklenir, loglar da yüklenir
                 if (dgvMessages.Rows.Count > 0)
                 {
@@ -72,10 +71,17 @@ namespace SmartBank.Desktop.Win.Views
 
         private void SetupGrids()
         {
+            // Kolonlar Designer’dan geliyorsa AutoGenerateColumns=false doğru.
             dgvMessages.AutoGenerateColumns = false;
+            dgvMessages.ReadOnly = true;
+            dgvMessages.MultiSelect = false;
+            dgvMessages.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvMessages.DataSource = _bsMsgs;
 
             dgvLogs.AutoGenerateColumns = false;
+            dgvLogs.ReadOnly = true;
+            dgvLogs.MultiSelect = false;
+            dgvLogs.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvLogs.DataSource = _bsLogs;
 
             // Seçim değişince logları yükle
@@ -87,14 +93,15 @@ namespace SmartBank.Desktop.Win.Views
             btnSend.Click += async (_, __) => await SendAsync();
             btnGetMessages.Click += async (_, __) => await LoadMessagesAsync();
             btnGetLogs.Click += async (_, __) => await LoadLogsForSelectedAsync();
+            btnClear.Click += (_, __) => ClearInputs();
         }
 
-        // --- Actions ---
+        // ---------------- Actions ----------------
 
         private void ClearInputs()
         {
             txtPAN.Text = "";
-            nudAmount.Value = nudAmount.Minimum < 0.01m ? 0 : 0.01m; // senin varsayılanın farklıysa ayarla
+            nudAmount.Value = nudAmount.Minimum < 0.01m ? 0.01m : nudAmount.Minimum;
             if (cboCurrency.Items.Contains("TRY"))
                 cboCurrency.SelectedItem = "TRY";
             else if (cboCurrency.Items.Count > 0)
@@ -115,6 +122,7 @@ namespace SmartBank.Desktop.Win.Views
         {
             try
             {
+                SetBusy(true);
                 var dto = new CreateSwitchMessageDto
                 {
                     PAN = (txtPAN.Text ?? "").Trim(),
@@ -130,8 +138,11 @@ namespace SmartBank.Desktop.Win.Views
 
                 if (res != null)
                 {
-                    MessageBox.Show($"Cevap: {res.Status}\nId: {res.Id}\nIssuer: {res.Issuer}", "Process");
-                    await LoadMessagesAsync(); // tazele
+                    MessageBox.Show($"Cevap: {res.Status}\nId: {res.Id}\nIssuer: {res.Issuer}", "Process",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // mevcut seçim korunarak tazele
+                    await LoadMessagesAsync(preserveSelectionId: res.Id);
                     ClearInputs();
                 }
             }
@@ -139,20 +150,37 @@ namespace SmartBank.Desktop.Win.Views
             {
                 ShowApiError("Switch Process", ex);
             }
+            finally
+            {
+                SetBusy(false);
+            }
         }
 
-        private async Task LoadMessagesAsync()
+        private async Task LoadMessagesAsync(int? preserveSelectionId = null)
         {
             try
             {
-                var list = await _client.GetAsync<List<SelectSwitchMessageDto>>("api/switch/messages", withAuth: true)
+                SetBusy(true);
+                // önceki seçim
+                var selectedId = preserveSelectionId ?? (_bsMsgs.Current as SelectSwitchMessageDto)?.Id;
+
+                var list = await _client.GetAsync<List<SelectSwitchMessageDto>>(
+                               "api/switch/messages", withAuth: true)
                            ?? new List<SelectSwitchMessageDto>();
 
                 list = list.OrderByDescending(x => x.Id).ToList();
                 _bsMsgs.DataSource = new BindingList<SelectSwitchMessageDto>(list);
-                dgvMessages.ClearSelection();
 
-                // log grid'i temizle
+                // Seçimi geri getir
+                dgvMessages.ClearSelection();
+                if (selectedId.HasValue)
+                {
+                    var rowIndex = list.FindIndex(x => x.Id == selectedId.Value);
+                    if (rowIndex >= 0 && rowIndex < dgvMessages.Rows.Count)
+                        dgvMessages.Rows[rowIndex].Selected = true;
+                }
+
+                // log grid'i temizle (sadece veri, kolonları değil)
                 _bsLogs.DataSource = new BindingList<SwitchLogDto>();
                 dgvLogs.ClearSelection();
             }
@@ -160,19 +188,27 @@ namespace SmartBank.Desktop.Win.Views
             {
                 ShowApiError("Switch Messages", ex);
             }
+            finally
+            {
+                SetBusy(false);
+            }
         }
 
         private async Task LoadLogsForSelectedAsync()
         {
+            if (_loadingLogs) return; // re-entrancy
             try
             {
+                _loadingLogs = true;
+
                 if (_bsMsgs.Current is not SelectSwitchMessageDto msg || msg.Id <= 0)
                 {
                     _bsLogs.DataSource = new BindingList<SwitchLogDto>();
                     return;
                 }
 
-                var logs = await _client.GetAsync<List<SwitchLogDto>>($"api/switch/logs/{msg.Id}", withAuth: true)
+                var logs = await _client.GetAsync<List<SwitchLogDto>>(
+                               $"api/switch/logs/{msg.Id}", withAuth: true)
                            ?? new List<SwitchLogDto>();
 
                 _bsLogs.DataSource = new BindingList<SwitchLogDto>(logs);
@@ -182,20 +218,30 @@ namespace SmartBank.Desktop.Win.Views
             {
                 ShowApiError("Switch Logs", ex);
             }
+            finally
+            {
+                _loadingLogs = false;
+            }
         }
 
-        // --- Error helper (kısaca) ---
+        // ---------------- Helpers ----------------
+
+        private void SetBusy(bool busy)
+        {
+            UseWaitCursor = busy;
+            btnSend.Enabled = !busy;
+            btnGetMessages.Enabled = !busy;
+            btnGetLogs.Enabled = !busy;
+            btnClear.Enabled = !busy;
+        }
+
         private void ShowApiError(string title, ApiException ex)
         {
             var body = (ex.ResponseBody ?? "").Trim();
             if (body.Length > 1000) body = body[..1000] + "...";
-            MessageBox.Show(string.IsNullOrWhiteSpace(body) ? $"{title}: HTTP {ex.StatusCode}" : body, title,
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-
-        private void btnClear_Click(object sender, EventArgs e)
-        {
-            ClearInputs();
+            MessageBox.Show(
+                string.IsNullOrWhiteSpace(body) ? $"{title}: HTTP {ex.StatusCode}" : body,
+                title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         private void UpdateFormTitle()
