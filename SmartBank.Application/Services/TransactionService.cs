@@ -108,14 +108,14 @@ namespace SmartBank.Application.Services
 
         public async Task<List<SelectTransactionDto>> GetAllTransactionsAsync()
         {
-            var q = await _dbContext.Transactions
+            var list = await _dbContext.Transactions
                 .AsNoTracking()
                 .Include(t => t.Card)
                 .OrderByDescending(t => t.TransactionDate)
                 .Select(t => new SelectTransactionDto
                 {
                     Id = t.Id,
-                    CardId = (int)t.CardId,
+                    CardId = t.CardId,
                     Currency = t.Currency,
                     Amount = t.Amount,
                     TransactionDate = t.TransactionDate,
@@ -125,19 +125,33 @@ namespace SmartBank.Application.Services
                         ? (t.Card.Id + " - " + MaskPan(t.Card.CardNumber))
                         : ("#" + t.CardId)
                 })
-                .OrderBy(t => t.Id)
                 .ToListAsync();
 
-            return q;
+            return list;
         }
 
-        public async Task<SelectTransactionDto> GetTransactionByIdAsync(int id)
+        public async Task<SelectTransactionDto?> GetTransactionByIdAsync(int id)
         {
-            var transaction = await _dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == id);
-            if (transaction == null)
-                throw new InvalidOperationException("İşlem bulunamadı.");
+            var t = await _dbContext.Transactions
+                .AsNoTracking()
+                .Include(x => x.Card)
+                .FirstOrDefaultAsync(x => x.Id == id);
 
-            return _mapper.Map<SelectTransactionDto>(transaction);
+            if (t == null) return null;
+
+            return new SelectTransactionDto
+            {
+                Id = t.Id,
+                CardId = t.CardId,
+                Currency = t.Currency,
+                Amount = t.Amount,
+                TransactionDate = t.TransactionDate,
+                Status = t.Status,
+                Description = t.Description,
+                Card = t.Card != null
+                    ? (t.Card.Id + " - " + MaskPan(t.Card.CardNumber))
+                    : ("#" + t.CardId)
+            };
         }
 
         public async Task<List<SelectTransactionDto>> GetTransactionByCardIdAsync(int cardId)

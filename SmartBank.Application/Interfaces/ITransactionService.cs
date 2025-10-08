@@ -11,7 +11,7 @@ namespace SmartBank.Application.Interfaces
     {
         Task<bool> CreateTransactionAsync (CreateTransactionDto dto);
         Task<List<SelectTransactionDto>> GetAllTransactionsAsync();
-        Task<SelectTransactionDto> GetTransactionByIdAsync (int id);
+        Task<SelectTransactionDto?> GetTransactionByIdAsync (int id);
         Task<List<SelectTransactionDto>> GetTransactionByCardIdAsync (int cardId);
     }
 }

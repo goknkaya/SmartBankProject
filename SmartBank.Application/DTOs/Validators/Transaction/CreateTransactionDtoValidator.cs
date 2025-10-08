@@ -16,7 +16,7 @@ namespace SmartBank.Application.DTOs.Validators.Transaction
             RuleFor(x => x.Amount).GreaterThan(0).WithMessage("İşlem tutarı sıfırdan büyük olmalıdır.");
             RuleFor(x => x.Currency).NotEmpty().WithMessage("Para birimi boş olamaz.").Length(3).WithMessage("Para birimi üç karakter olmalıdır.");
             RuleFor(x => x.TransactionDate).NotEmpty().WithMessage("İşlem tarihi girilmelidir.");
-            RuleFor(x => x.Description).MaximumLength(200).WithMessage("Açıklama en fazla 200 karakter olmalıdır.");
+            RuleFor(x => x.Description).MaximumLength(100).WithMessage("Açıklama en fazla 200 karakter olmalıdır.");
         }
     }
 }

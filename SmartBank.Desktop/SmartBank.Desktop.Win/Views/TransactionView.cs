@@ -232,13 +232,7 @@ namespace SmartBank.Desktop.Win.Views
             try
             {
                 await _api.PostAsync<CreateTransactionDto, object?>("api/Transaction", dto);
-
-                // Tüm liste kalsın (filtre yok)
-                await LoadAllAsync();
-
-                // Formu temizle (tek tık)
                 await ClearAndReloadAsync();
-
                 MessageBox.Show("İşlem oluşturuldu.", "Bilgi");
             }
             catch (ApiException ex) { ShowApiError("İşlem oluşturma", ex); }
@@ -247,13 +241,10 @@ namespace SmartBank.Desktop.Win.Views
 
         // ================== UI HELPERS ==================
 
-        /// <summary>
-        /// Grid’e veri bağlar. ID’ye göre azalan sıralama + BindingList ile güvenli binding.
-        /// </summary>
         private void BindRows(IEnumerable<SelectTransactionDto> rows)
         {
             var ordered = rows
-                .OrderBy(r => r.Id) // istersen .OrderByDescending(r => r.TransactionDate)
+                .OrderBy(r => r.Id)
                 .ToList();
 
             _bs.DataSource = new BindingList<SelectTransactionDto>(ordered);

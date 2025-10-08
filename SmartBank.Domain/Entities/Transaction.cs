@@ -10,9 +10,7 @@ namespace SmartBank.Domain.Entities
     public class Transaction
     {
         public int Id { get; set; }
-
-        [Required]
-        public int? CardId { get; set; }
+        public int CardId { get; set; }
 
         [Required]
         [MaxLength(3)]
@@ -31,7 +29,9 @@ namespace SmartBank.Domain.Entities
         public string? Description { get; set; }
         public bool IsReversed { get; set; }
         public virtual Card? Card { get; set; }
-        public string? AcquirerRef { get; set; }  // aynı ExternalId
+
+        [MaxLength(64)]
+        public string? AcquirerRef { get; set; }
 
         [MaxLength(64)]
         public string? SignatureHash { get; set; }

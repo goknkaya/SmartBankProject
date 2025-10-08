@@ -26,6 +26,7 @@ namespace SmartBank.Desktop.Win.Core.Contracts
         public decimal Amount { get; set; }
         public string Currency { get; set; } = "TRY";
         public string? Description { get; set; }
-        public DateTime TransactionDate { get; set; } = DateTime.Now;
+        public DateTime TransactionDate { get; set; } = DateTime.Now; // ← fazladan default var
     }
+
 }
