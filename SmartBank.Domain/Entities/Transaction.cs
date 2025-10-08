@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace SmartBank.Domain.Entities
 
         [Required]
         [Range(0.01, double.MaxValue)]
+        [Precision(18, 2)]
         public decimal Amount { get; set; }
 
         [Required]

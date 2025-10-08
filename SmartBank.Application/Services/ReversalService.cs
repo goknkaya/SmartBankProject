@@ -12,6 +12,10 @@ namespace SmartBank.Application.Services
         private readonly CustomerCoreDbContext _dbContext;
         private readonly IMapper _mapper;
 
+        // Ayrı sınıf açmadan, lokal sabitler:
+        private const string StatusSuccess = "S";
+        private const string StatusVoid = "V";
+
         public ReversalService(CustomerCoreDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
@@ -21,7 +25,6 @@ namespace SmartBank.Application.Services
         // 1) CREATE
         public async Task<bool> CreateReversalAsync(CreateReversalDto dto)
         {
-            // atomic çalışalım
             await using var tx = await _dbContext.Database.BeginTransactionAsync();
 
             // 1) İşlem var mı?
@@ -35,7 +38,7 @@ namespace SmartBank.Application.Services
             if (txEntity.IsReversed)
                 throw new InvalidOperationException("Bu işlem zaten geri alınmış.");
 
-            // 2) Basit validasyonlar
+            // 2) Validasyonlar
             if (dto.ReversedAmount <= 0)
                 throw new InvalidOperationException("Reversal tutarı sıfırdan büyük olmalıdır.");
 
@@ -46,7 +49,10 @@ namespace SmartBank.Application.Services
             if (string.IsNullOrWhiteSpace(dto.PerformedBy))
                 throw new InvalidOperationException("Reversal işlemi yapan kullanıcı zorunludur.");
 
-            // 3) Kartı tracked çek
+            if (Math.Round(dto.ReversedAmount, 2) != Math.Round(txEntity.Amount, 2))
+                throw new InvalidOperationException("Şimdilik sadece tam reversal desteklenmektedir.");
+
+            // 3) Kart limit iadesi
             var card = await _dbContext.Cards.FirstOrDefaultAsync(c => c.Id == txEntity.CardId);
             bool isCardLimitRestored = false;
 
@@ -58,18 +64,18 @@ namespace SmartBank.Application.Services
                 isCardLimitRestored = true;
             }
 
-            // 4) Transaction.IsReversed işaretle (attach + partial update ile)
+            // 4) Transaction.IsReversed işaretle (attach + partial update)
             var txToUpdate = new Transaction { Id = txEntity.Id, IsReversed = true };
             _dbContext.Transactions.Attach(txToUpdate);
             _dbContext.Entry(txToUpdate).Property(x => x.IsReversed).IsModified = true;
 
-            // 5) Reversal kaydını oluştur
+            // 5) Reversal kaydı
             var reversal = new Reversal
             {
                 TransactionId = txEntity.Id,
                 Reason = dto.Reason,
                 ReversedAmount = dto.ReversedAmount,
-                Status = "S",                              // Successful
+                Status = StatusSuccess,
                 PerformedBy = dto.PerformedBy,
                 ReversalDate = DateTime.Now,
                 ReversalSource = dto.ReversalSource,
@@ -77,20 +83,19 @@ namespace SmartBank.Application.Services
             };
             _dbContext.Reversals.Add(reversal);
 
-            // 6) Kaydet ve commit
+            // 6) Kaydet & commit
             await _dbContext.SaveChangesAsync();
             await tx.CommitAsync();
             return true;
         }
 
-
         // 2) GET ALL
         public async Task<List<SelectReversalDto>> GetAllReversalsAsync()
         {
             var reversals = await _dbContext.Reversals
-                //.Where(r => r.Status != "V")   // Void olmayanlar
+                .Where(r => !r.IsDeleted)         // soft delete gizle
+                .OrderByDescending(r => r.Id)     // en yeniler üstte
                 .ToListAsync();
-
 
             return _mapper.Map<List<SelectReversalDto>>(reversals);
         }
@@ -110,28 +115,28 @@ namespace SmartBank.Application.Services
         // 4) GET BY TRANSACTION ID
         public async Task<List<SelectReversalDto>> GetReversalsByTransactionIdAsync(int transactionId)
         {
-            // Önce tüm reversalları çek (S ve V dahil)
             var all = await _dbContext.Reversals
-                .Where(r => r.TransactionId == transactionId)
+                .Where(r => r.TransactionId == transactionId && !r.IsDeleted)
+                .OrderByDescending(r => r.Id)
                 .ToListAsync();
 
-            // Eğer hiç kayıt yoksa direkt NotFound
             if (!all.Any())
                 throw new InvalidOperationException("Bu işlem için hiç reversal bulunamadı.");
 
-            // Kullanıcıya sadece S’leri döndür
-            var successOnly = all.Where(r => r.Status != "V").ToList();
+            // kullanıcıya sadece başarılı (void olmayan) reversallar
+            var successOnly = all.Where(r => r.Status != StatusVoid).ToList();
 
-            // Eğer S yok ama sadece V varsa hata fırlat
             if (!successOnly.Any())
                 throw new InvalidOperationException("Bu işlem için reversal var ancak iptal edilmiş durumda.");
 
             return _mapper.Map<List<SelectReversalDto>>(successOnly);
         }
 
-        // 5) VOID (silmek yok; iptal/void)
+        // 5) VOID
         public async Task<bool> VoidReversalAsync(int id, string performedBy, string reason)
         {
+            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
             var reversal = await _dbContext.Reversals
                 .Include(r => r.Transaction)
                 .ThenInclude(t => t.Card)
@@ -140,8 +145,11 @@ namespace SmartBank.Application.Services
             if (reversal == null)
                 throw new InvalidOperationException("Reversal bulunamadı.");
 
-            if (reversal.Status == "V")
+            if (reversal.Status == StatusVoid)
+            {
+                await tx.RollbackAsync(); // no-op, açıklık için
                 return true; // zaten void
+            }
 
             // Kart limiti iade edilmişse geri düş
             if (reversal.IsCardLimitRestored && reversal.Transaction?.Card != null)
@@ -158,19 +166,23 @@ namespace SmartBank.Application.Services
                 reversal.IsCardLimitRestored = false;
             }
 
+            // İşlemi reversed=false yap
             if (reversal.Transaction != null)
             {
                 reversal.Transaction.IsReversed = false;
                 _dbContext.Transactions.Update(reversal.Transaction);
             }
 
-            reversal.Status = "V";
-            reversal.VoidedBy = performedBy;
-            reversal.VoidReason = reason;
+            // Reversal'ı void et
+            reversal.Status = StatusVoid;
+            reversal.VoidedBy = string.IsNullOrWhiteSpace(performedBy) ? "user" : performedBy.Trim();
+            reversal.VoidReason = reason ?? string.Empty;
             reversal.VoidedAt = DateTime.Now;
 
             _dbContext.Reversals.Update(reversal);
+
             await _dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
             return true;
         }
     }

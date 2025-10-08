@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace SmartBank.Domain.Entities
 {
@@ -13,6 +14,8 @@ namespace SmartBank.Domain.Entities
         public int TransactionId { get; set; }
         public Transaction Transaction { get; set; }
         public string Reason { get; set; } //Geri alım sebebi
+
+        [Precision(18, 2)]
         public decimal ReversedAmount { get; set; }  //Geri alınan tutar
         public string Status { get; set; } //Geri alma durumu (Success, Failed, Pending vs)
         public string PerformedBy { get; set; } // Kim yaptı

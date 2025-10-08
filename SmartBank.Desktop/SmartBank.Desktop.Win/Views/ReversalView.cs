@@ -17,21 +17,28 @@ namespace SmartBank.Desktop.Win.Views
         private List<SelectReversalDto> _rows = new();
 
         private bool _suppressUi;
+
         public ReversalView(ApiClient api)
         {
             InitializeComponent();
             _client = api;
 
-            // grid & combos
             SetupGrid();
             InitInputs();
             WireMenu();
 
+            // İlk yükleme
             _ = LoadAllAsync();
 
+            // Seçim ve binding değişimlerini tek yerden dinle
             dgvRev.SelectionChanged += (_, __) => { FillDetailsFromCurrent(); UpdateVoidButtonState(); };
             _bindingSource.CurrentChanged += (_, __) => UpdateVoidButtonState();
+
+            // Form başlığı
+            this.Load += ReversalView_Load;
         }
+
+        // ---------------- Grid & Inputs ----------------
 
         private void SetupGrid()
         {
@@ -42,6 +49,7 @@ namespace SmartBank.Desktop.Win.Views
             dgvRev.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvRev.DataSource = _bindingSource;
 
+            // Kolon data bağları (Designer’daki isimlerle eşleşmeli)
             colId.DataPropertyName = "Id";
             colTransactionId.DataPropertyName = "TransactionId";
             colReversedAmount.DataPropertyName = "ReversedAmount";
@@ -55,29 +63,26 @@ namespace SmartBank.Desktop.Win.Views
             colVoidedAt.DataPropertyName = "VoidedAt";
             colVoidReason.DataPropertyName = "VoidReason";
 
-            // Hatalı hücrede default uyarıyı bastır
-            dgvRev.DataError += (s, e) => e.ThrowException = false;
-
-            // Hata kutucuğunu bastır
+            // Hata kutularını bastır (tek event, double bağlama yok)
             dgvRev.DataError += (s, e) => e.ThrowException = false;
 
             // Görsel formatlar
             colReversedAmount.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             colReversedAmount.DefaultCellStyle.Format = "N2";
-
             colReversalDate.DefaultCellStyle.Format = "dd.MM.yyyy HH:mm";
             colVoidedAt.DefaultCellStyle.Format = "dd.MM.yyyy HH:mm";
 
-            dgvRev.SelectionChanged += (_, __) => FillDetailsFromCurrent();
+            // “V” olmayan satırlarda void alanlarını boş göster
+            dgvRev.CellFormatting += dgvRev_CellFormatting;
         }
 
         private void InitInputs()
         {
-            // Para/Tutar alanı
+            // Para/Tutar
             nudAmount.DecimalPlaces = 2;
             nudAmount.ThousandsSeparator = true;
             nudAmount.Minimum = 0;
-            nudAmount.Maximum = 99999999;
+            nudAmount.Maximum = 99999999; // DB precision ile paralel tut
 
             // Kaynak
             cboSource.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -85,7 +90,7 @@ namespace SmartBank.Desktop.Win.Views
             cboSource.Items.AddRange(new object[] { "API", "MANUEL", "BATCH" });
             cboSource.SelectedItem = "API";
 
-            // Readonly alanlar
+            // Readonly detaylar
             txtReversalId.ReadOnly = true;
             txtStatus.ReadOnly = true;
             txtDate.ReadOnly = true;
@@ -104,6 +109,7 @@ namespace SmartBank.Desktop.Win.Views
         private void UpdateVoidButtonState()
         {
             var r = _bindingSource.Current as SelectReversalDto;
+            // Sadece başarılı (S) reversallar void edilebilir
             miVoid.Enabled = r != null && string.Equals(r.Status, "S", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -150,7 +156,7 @@ namespace SmartBank.Desktop.Win.Views
 
         private async Task CreateAsync()
         {
-            // Gerekli alanlar: TransactionId, Amount, Reason, PerformedBy, Source
+            // Zorunlu alan kontrolleri
             if (!int.TryParse(txtSearchTxnId.Text.Trim(), out var txnId) || txnId <= 0)
             { MessageBox.Show("Oluşturmak için İşlem (Txn) ID gir.", "Uyarı"); return; }
 
@@ -177,10 +183,8 @@ namespace SmartBank.Desktop.Win.Views
             try
             {
                 await _client.PostAsync<CreateReversalDto, object?>("api/reversal", dto);
-
-                await LoadAllAsync();
+                // Çift yüklemeyi engelle → ClearAndReload yeterli
                 await ClearAndReloadAsync();
-
                 MessageBox.Show("Reversal oluşturuldu.", "Bilgi");
             }
             catch (ApiException ex) { ShowApiError("Reversal Oluşturma", ex); }
@@ -195,7 +199,6 @@ namespace SmartBank.Desktop.Win.Views
                 return;
             }
 
-            // İptal eden + sebep (opsiyonel ama PerformedBy zorunlu)
             var body = new
             {
                 PerformedBy = string.IsNullOrWhiteSpace(txtPerformedBy.Text) ? "user" : txtPerformedBy.Text.Trim(),
@@ -215,36 +218,40 @@ namespace SmartBank.Desktop.Win.Views
 
         private void BindRows(IEnumerable<SelectReversalDto> rows)
         {
-            // İstersen ID’ye göre artan/azalan burada ayarlanır
-            var ordered = rows.OrderBy(r => r.Id).ToList();
+            // En yeni üstte
+            var ordered = rows.OrderByDescending(r => r.Id).ToList();
 
             _bindingSource.DataSource = new BindingList<SelectReversalDto>(ordered);
+
+            dgvRev.CurrentCell = null;
             dgvRev.ClearSelection();
 
-            // Detayları sıfırla
             if (!_suppressUi)
             {
+                // Detayları sıfırla
                 txtReversalId.Clear();
                 txtStatus.Clear();
                 txtDate.Clear();
             }
+
+            UpdateVoidButtonState();
         }
 
         private async Task ClearAndReloadAsync()
         {
             _suppressUi = true;
 
-            // aramalar
+            // Aramalar
             txtSearchId.Clear();
             txtSearchTxnId.Clear();
 
-            // giriş alanları
+            // Giriş alanları
             txtReason.Clear();
             txtPerformedBy.Clear();
             nudAmount.Value = 0;
             if (cboSource.Items.Count > 0) cboSource.SelectedIndex = 0;
 
-            // detay
+            // Detay
             txtReversalId.Clear();
             txtStatus.Clear();
             txtDate.Clear();
@@ -267,10 +274,39 @@ namespace SmartBank.Desktop.Win.Views
             txtStatus.Text = r.Status ?? "";
             txtDate.Text = r.ReversalDate == default ? "" : r.ReversalDate.ToString("dd.MM.yyyy HH:mm");
             txtReason.Text = r.Reason ?? "";
-            nudAmount.Value = r.ReversedAmount;
+            nudAmount.Value = SafeDecimalToNumeric(r.ReversedAmount);
             txtPerformedBy.Text = r.PerformedBy ?? "";
             txtSearchId.Text = r.Id.ToString();
             txtSearchTxnId.Text = r.TransactionId.ToString();
+        }
+
+        private decimal SafeDecimalToNumeric(decimal value)
+        {
+            // NumericUpDown sınırları içinde tut
+            if (value < nudAmount.Minimum) return nudAmount.Minimum;
+            if (value > nudAmount.Maximum) return nudAmount.Maximum;
+            return Math.Round(value, nudAmount.DecimalPlaces);
+        }
+
+        private void dgvRev_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.RowIndex >= dgvRev.Rows.Count) return;
+
+            if (dgvRev.Rows[e.RowIndex].DataBoundItem is SelectReversalDto r && !string.Equals(r.Status, "V", StringComparison.OrdinalIgnoreCase))
+            {
+                var name = dgvRev.Columns[e.ColumnIndex].Name;
+                if (name is "colVoidedBy" or "colVoidedAt" or "colVoidReason")
+                {
+                    e.Value = "";   // V değilse boş göster
+                    e.FormattingApplied = true;
+                }
+            }
+        }
+
+        private void ReversalView_Load(object? sender, EventArgs e)
+        {
+            if (this.ParentForm != null)
+                this.ParentForm.Text = "SmartBank Ödeme Sistemleri / Reversal";
         }
 
         private void ShowApiError(string title, ApiException ex)
@@ -281,31 +317,13 @@ namespace SmartBank.Desktop.Win.Views
             var msg = ex.StatusCode switch
             {
                 400 => body != "" ? body : "Geçersiz istek.",
-                404 => "Kayıt bulunamadı veya kayıt bir Void işlem.",
+                404 => "Kayıt bulunamadı veya kayıt iptal edilmiş olabilir.",
                 409 => body != "" ? body : "İş kuralı ihlali.",
                 500 => "Sunucu hatası.",
                 _ => body != "" ? body : $"İşlem başarısız. Kod: {ex.StatusCode}"
             };
 
             MessageBox.Show(msg, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-
-        private void dgvRev_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
-        {
-            if (dgvRev.Rows[e.RowIndex].DataBoundItem is SelectReversalDto r && r.Status != "V")
-            {
-                var name = dgvRev.Columns[e.ColumnIndex].Name;
-                if (name is "colVoidedBy" or "colVoidedAt" or "colVoidReason")
-                    e.Value = ""; // V değilse boş göster
-            }
-        }
-
-        private void ReversalView_Load(object sender, EventArgs e)
-        {
-            if (this.ParentForm != null)
-            {
-                this.ParentForm.Text = "SmartBank Ödeme Sistemleri / Reversal";
-            }
         }
     }
 }

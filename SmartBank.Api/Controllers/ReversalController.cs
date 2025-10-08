@@ -19,9 +19,6 @@ namespace SmartBank.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateReversalDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             try
             {
                 var ok = await _reversalService.CreateReversalAsync(dto);

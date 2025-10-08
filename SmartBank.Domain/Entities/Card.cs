@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace SmartBank.Domain.Entities
 {
@@ -44,6 +46,7 @@ namespace SmartBank.Domain.Entities
 
         public bool IsVirtual { get; set; }
 
+        [Precision(18, 2)]
         public decimal CardLimit { get; set; }
 
         public decimal DailyLimit { get; set; } = 0;
