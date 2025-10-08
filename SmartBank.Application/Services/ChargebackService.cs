@@ -12,6 +12,8 @@ namespace SmartBank.Application.Services
         private readonly CustomerCoreDbContext _dbContext;
         private readonly IMapper _mapper;
 
+        private static string? Trunc(string? s, int len) => string.IsNullOrEmpty(s) ? s : (s.Length <= len ? s : s.Substring(0, len));
+
         public ChargebackService(CustomerCoreDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
@@ -60,7 +62,7 @@ namespace SmartBank.Application.Services
                 TransactionId = txn.Id,
                 Currency = txn.Currency,
                 TransactionAmount = txn.Amount,
-                MerchantName = txn.Description,
+                MerchantName = Trunc(txn.Description, 100),
                 ReasonCode = dto.ReasonCode,
                 DisputedAmount = dto.DisputedAmount,
                 ReplyBy = dto.ReplyBy,

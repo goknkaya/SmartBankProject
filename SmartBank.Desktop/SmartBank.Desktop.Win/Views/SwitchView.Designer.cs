@@ -369,7 +369,6 @@
             btnClear.TabIndex = 17;
             btnClear.Text = "TEMİZLE";
             btnClear.UseVisualStyleBackColor = true;
-            btnClear.Click += btnClear_Click;
             // 
             // SwitchView
             // 

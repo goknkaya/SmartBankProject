@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartBank.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using SmartBank.Infrastructure.Persistence;
 namespace SmartBank.Infrastructure.Migrations
 {
     [DbContext(typeof(CustomerCoreDbContext))]
-    partial class CustomerCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251008222333_Switch_ExternalId128_Unique")]
+    partial class Switch_ExternalId128_Unique
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,6 +177,10 @@ namespace SmartBank.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OpenedAt");
+
+                    b.HasIndex("Status");
+
                     b.HasIndex("TransactionId");
 
                     b.ToTable("ChargebackCases");
@@ -191,9 +198,7 @@ namespace SmartBank.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("getdate()");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("EvidenceUrl")
                         .HasColumnType("nvarchar(max)");
@@ -701,7 +706,7 @@ namespace SmartBank.Infrastructure.Migrations
                     b.HasOne("SmartBank.Domain.Entities.Transaction", "Transaction")
                         .WithMany()
                         .HasForeignKey("TransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Transaction");

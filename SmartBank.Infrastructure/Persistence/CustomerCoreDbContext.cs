@@ -127,26 +127,25 @@ namespace SmartBank.Infrastructure.Persistence
                 e.Property(x => x.Acquirer).HasMaxLength(50);
                 e.Property(x => x.Issuer).HasMaxLength(50);
                 e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Pending");
-                e.Property(x => x.ExternalId).HasMaxLength(64).IsRequired();
+
+                // ÖNEMLİ: Entity'de [MaxLength(128)] dedik; fluent'te de 128 yapalım
+                e.Property(x => x.ExternalId).HasMaxLength(128).IsRequired();
 
                 // Amount -> decimal(18,2)
                 e.Property(x => x.Amount).HasColumnType("decimal(18,2)");
 
-                // İndeksler
-                e.HasIndex(x => x.Status);
+                // İndeksler (idempotency için ExternalId tek başına UNIQUE)
+                e.HasIndex(x => x.ExternalId).IsUnique();
+                e.HasIndex(x => new { x.Status, x.Id });
+                e.HasIndex(x => new { x.Issuer, x.Id });
                 e.HasIndex(x => x.CreatedAt);
-                e.HasIndex(x => new { x.Issuer, x.Status });
-                e.HasIndex(x => new { x.Acquirer, x.ExternalId })
-                 .IsUnique()
-                 .HasFilter("[ExternalId] IS NOT NULL");
 
-                // FK'ler (opsiyonel ama iyi)
+                // FK'ler
                 e.HasOne(x => x.Card)
                  .WithMany()
                  .HasForeignKey(x => x.CardId)
                  .OnDelete(DeleteBehavior.NoAction);
 
-                // Transaction'a da FK vermek istersen (nav yoksa da olur)
                 e.HasOne<Transaction>()
                  .WithMany()
                  .HasForeignKey(x => x.TransactionId)
@@ -158,11 +157,6 @@ namespace SmartBank.Infrastructure.Persistence
             // =======================
             modelBuilder.Entity<SwitchLog>(e =>
             {
-                e.HasOne(x => x.Message)
-                 .WithMany()
-                 .HasForeignKey(x => x.MessageId)
-                 .OnDelete(DeleteBehavior.Cascade);
-
                 e.Property(x => x.Stage).HasMaxLength(20); // Received/Routed/Persisted/Responded
                 e.Property(x => x.Level).HasMaxLength(10); // INFO/WARN/ERROR
                 e.Property(x => x.Note).HasMaxLength(200);
@@ -171,9 +165,9 @@ namespace SmartBank.Infrastructure.Persistence
                 e.HasIndex(x => x.CreatedAt);
 
                 e.HasOne(x => x.Message)
-                    .WithMany()
-                    .HasForeignKey(x => x.MessageId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                 .WithMany()
+                 .HasForeignKey(x => x.MessageId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
 
             // =======================
@@ -191,24 +185,21 @@ namespace SmartBank.Infrastructure.Persistence
             // =======================
             // ChargebackCase
             // =======================
-            modelBuilder.Entity<ChargebackCase>(e =>
+            modelBuilder.Entity<ChargebackCase>(b =>
             {
-                e.Property(x => x.ReasonCode).HasMaxLength(20).IsRequired();
-                e.Property(x => x.Status).HasMaxLength(15).IsRequired();
-                e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
-                e.Property(x => x.MerchantName).HasMaxLength(100);
+                b.Property(x => x.TransactionAmount).HasColumnType("decimal(18,2)");
+                b.Property(x => x.DisputedAmount).HasColumnType("decimal(18,2)");
+                b.Property(x => x.Currency).HasMaxLength(3);
+                b.Property(x => x.Status).HasMaxLength(15);
+                b.Property(x => x.ReasonCode).HasMaxLength(20);
+                b.Property(x => x.MerchantName).HasMaxLength(100);
+            });
 
-                e.Property(x => x.TransactionAmount).HasColumnType("decimal(18,2)");
-                e.Property(x => x.DisputedAmount).HasColumnType("decimal(18,2)");
-
-                e.HasIndex(x => x.Status);
-                e.HasIndex(x => x.OpenedAt);
-
-                // FK
-                e.HasOne(x => x.Transaction)
-                 .WithMany()
-                 .HasForeignKey(x => x.TransactionId)
-                 .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ChargebackEvent>(b =>
+            {
+                b.Property(x => x.Type).HasMaxLength(20);
+                b.Property(x => x.Note).HasMaxLength(200);
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("getdate()");
             });
 
             // =======================

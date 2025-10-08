@@ -121,11 +121,20 @@ namespace SmartBank.Desktop.Win.Views
                 if (e.RowIndex < 0) return;
                 if (dgvEvents.Columns[e.ColumnIndex] is DataGridViewLinkColumn)
                 {
-                    var url = dgvEvents.Rows[e.RowIndex].Cells[e.ColumnIndex].Value as string;
+                    var url = (string?)dgvEvents.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
                     if (!string.IsNullOrWhiteSpace(url))
                     {
-                        try { Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true }); }
-                        catch (Exception ex) { MessageBox.Show($"Evidence açılamadı: {ex.Message}", "Chargeback"); }
+                        try
+                        {
+                            if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                                url = System.IO.Path.GetFullPath(url); // local path'i tam yola çevir
+
+                            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Evidence açılamadı: {ex.Message}", "Chargeback");
+                        }
                     }
                 }
             };

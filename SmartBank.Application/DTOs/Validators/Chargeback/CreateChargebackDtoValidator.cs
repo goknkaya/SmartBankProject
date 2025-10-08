@@ -15,7 +15,7 @@ public class CreateChargebackDtoValidator : AbstractValidator<CreateChargebackDt
 
         RuleFor(x => x.ReasonCode)
             .NotEmpty().WithMessage("reasonCode zorunludur.")
-            .MaximumLength(50).WithMessage("reasonCode en fazla 50 karakter olabilir.");
+            .MaximumLength(20).WithMessage("reasonCode en fazla 20 karakter olabilir.");
 
         RuleFor(x => x.Note)
             .MaximumLength(500).WithMessage("note en fazla 500 karakter olabilir.");
