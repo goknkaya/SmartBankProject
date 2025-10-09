@@ -338,12 +338,9 @@ namespace SmartBank.Application.Services
         private static ClearingRecord ParseLine(string line, int batchId, int lineNo)
         {
             var parts = line.Split(';');
-
-            // 1) Kolon sayısı
             if (parts.Length < 5)
                 return ErrorRow(batchId, lineNo, "Eksik kolon sayısı");
 
-            // 2) Zorunlu alanlar (CardLast4, Amount, Currency)
             var last4 = NormalizeLast4(parts[0]);
             if (last4 is null)
                 return ErrorRow(batchId, lineNo, "CardLast4 geçersiz/boş");
@@ -355,7 +352,6 @@ namespace SmartBank.Application.Services
             if (!IsValidCurrency(currency))
                 return ErrorRow(batchId, lineNo, "Currency 3 harfli ISO olmalı");
 
-            // 3) Opsiyoneller
             DateTime? txDate = null;
             var d = parts[3]?.Trim();
             if (!string.IsNullOrEmpty(d) &&
@@ -364,12 +360,9 @@ namespace SmartBank.Application.Services
 
             var merchant = string.IsNullOrWhiteSpace(parts[4]) ? null : parts[4].Trim();
 
-            // 4) OUT dosyasından geldiyse 6. kolon SignatureHash olabilir (opsiyonel)
-            var providedSig = parts.Length >= 6 ? parts[5]?.Trim() : null;
-            var computedSig = ComputeSignature(last4, amount, currency, txDate, merchant);
-            var finalSig = string.IsNullOrWhiteSpace(providedSig) ? computedSig : providedSig;
+            // 6. kolon imza olabilir (opsiyonel)
+            var sigFromFile = (parts.Length >= 6 ? parts[5]?.Trim() : null);
 
-            // 5) Geçerli satır -> P (işlenecek)
             return new ClearingRecord
             {
                 BatchId = batchId,
@@ -381,15 +374,22 @@ namespace SmartBank.Application.Services
                 MerchantName = merchant,
                 MatchStatus = "P",
                 CreatedAt = DateTime.Now,
-                SignatureHash = finalSig
+                SignatureHash = string.IsNullOrWhiteSpace(sigFromFile)
+                    ? ComputeSignature(last4, amount, currency, txDate, merchant)
+                    : sigFromFile
             };
         }
+
 
         // Eşleştirme: hatalıysa E, bulunamazsa N, bulunursa M
         private async Task TryMatchAsync(ClearingRecord record)
         {
-            var sig = ComputeSignature(record.CardLast4, record.Amount, record.Currency, record.TransactionDate, record.MerchantName);
+            // 6. kolonda imza gelmişse onu kullan; yoksa yeniden hesapla
+            var sig = string.IsNullOrWhiteSpace(record.SignatureHash)
+                ? ComputeSignature(record.CardLast4, record.Amount, record.Currency, record.TransactionDate, record.MerchantName)
+                : record.SignatureHash;
 
+            // Sadece imzayla eşleştir (tarih/saniye/boşluk hatalarıyla uğraşma)
             var trx = await _db.Transactions.FirstOrDefaultAsync(t =>
                 t.Status == "S" && t.SignatureHash == sig);
 
@@ -400,12 +400,14 @@ namespace SmartBank.Application.Services
                 return;
             }
 
-            var alreadyMatched = await _db.ClearingRecords
-                .AnyAsync(r => r.BatchId == record.BatchId && r.TransactionId == trx.Id && r.Id != record.Id && r.MatchStatus == "M");
+            var alreadyMatched = await _db.ClearingRecords.AnyAsync(r =>
+                r.BatchId == record.BatchId && r.TransactionId == trx.Id &&
+                r.Id != record.Id && r.MatchStatus == "M");
 
             if (alreadyMatched)
             {
                 record.MatchStatus = "X";
+                record.TransactionId = null;
                 record.ErrorMessage = "Aynı işlem başka satırda zaten eşleşmiş.";
             }
             else

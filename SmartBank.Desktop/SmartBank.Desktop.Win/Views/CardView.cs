@@ -266,10 +266,10 @@ namespace SmartBank.Desktop.Win.Views
             // ---------- EDIT'te açık kalacaklar ----------
             cboStatus.Enabled = edit;
 
-            // Limitler: Edit'te düzenlenebilir
-            numCardLimit.Enabled = edit;
-            numDailyLimit.Enabled = edit;
-            numTxnLimit.Enabled = edit;
+            // Limitler: Edit'te de Create' te de düzenlenebilir
+            numCardLimit.Enabled = (_mode == ViewMode.Create) || (_mode == ViewMode.Edit);
+            numDailyLimit.Enabled = (_mode == ViewMode.Create) || (_mode == ViewMode.Edit);
+            numTxnLimit.Enabled = (_mode == ViewMode.Create) || (_mode == ViewMode.Edit);
 
             // FailedPinAttempts: aynı davranış (istersen edit'e özel yapabilirsin)
             if (this.Controls.Find("numFailedPinAttempts", true).FirstOrDefault() is NumericUpDown pinFail)
@@ -474,7 +474,7 @@ namespace SmartBank.Desktop.Win.Views
             ClearForm();
             cboStatus.SelectedValue = "A";
             ToggleForm(true);
-            SetEditLocks(); // <-- EKLE
+            SetEditLocks();
             miSave.Enabled = miCancel.Enabled = true;
             miInsert.Enabled = miUpdate.Enabled = miDelete.Enabled = false;
         }
@@ -484,7 +484,7 @@ namespace SmartBank.Desktop.Win.Views
             if (_selected == null) return;
             _mode = ViewMode.Edit;
             ToggleForm(true);
-            SetEditLocks(); // <-- EKLE
+            SetEditLocks();
             miSave.Enabled = miCancel.Enabled = true;
             miInsert.Enabled = miUpdate.Enabled = miDelete.Enabled = false;
         }
