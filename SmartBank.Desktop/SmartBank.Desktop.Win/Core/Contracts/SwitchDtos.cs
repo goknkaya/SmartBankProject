@@ -14,6 +14,11 @@ namespace SmartBank.Desktop.Win.Core.Contracts
         public string Acquirer { get; set; } = "DemoPOS";
         public DateTime? TxnTime { get; set; }
         public string? MerchantName { get; set; }
+
+        // Opsiyonel: ileride ekleyebilirsin
+        public string? RRN { get; set; }
+        public string? STAN { get; set; }
+        public string? TerminalId { get; set; }
     }
 
     public sealed class SelectSwitchMessageDto

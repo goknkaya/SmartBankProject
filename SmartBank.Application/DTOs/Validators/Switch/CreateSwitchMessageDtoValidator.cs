@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using SmartBank.Application.DTOs.Switching;
+using System.Text.RegularExpressions;
 
 namespace SmartBank.Application.Validators.Switch
 {
@@ -23,6 +24,20 @@ namespace SmartBank.Application.Validators.Switch
                 .WithMessage("Desteklenen para birimi: TRY, USD, EUR.");
 
             RuleFor(x => x.Acquirer).NotEmpty().MaximumLength(50);
+
+            // Opsiyonel alanlar: varsa format kontrolü
+            RuleFor(x => x.RRN)
+                .Must(rrn => string.IsNullOrWhiteSpace(rrn) || Regex.IsMatch(rrn, @"^\d{6,12}$"))
+                .WithMessage("RRN 6–12 haneli rakam olmalı.");
+
+            RuleFor(x => x.STAN)
+                .Must(stan => string.IsNullOrWhiteSpace(stan) || Regex.IsMatch(stan, @"^\d{6}$"))
+                .WithMessage("STAN 6 haneli rakam olmalı.");
+
+            RuleFor(x => x.TerminalId)
+                .Must(tid => string.IsNullOrWhiteSpace(tid) || tid.Length <= 16)
+                .WithMessage("TerminalId en fazla 16 karakter.");
+
         }
     }
 }

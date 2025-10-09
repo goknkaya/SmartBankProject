@@ -35,15 +35,34 @@ namespace SmartBank.Application.Services
                 .Select(b => b.Issuer)
                 .FirstOrDefaultAsync() ?? "Unknown";
 
-            // 2) ExternalId (InvariantCulture)
-            var externalId = string.Create(CultureInfo.InvariantCulture,
-                $"{dto.Acquirer}|{bin}|{dto.Amount:0.00}|{cur}|{txTime:yyyyMMddHHmmss}");
+            // -- 2) ExternalId: RRN/STAN/TID varsa onları kullan; yoksa dakika bazlı fallback
+            string externalId;
+            if (!string.IsNullOrWhiteSpace(dto.RRN))
+            {
+                externalId = $"{dto.Acquirer}|RRN:{dto.RRN.Trim()}";
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.TerminalId) && !string.IsNullOrWhiteSpace(dto.STAN))
+            {
+                externalId = $"{dto.Acquirer}|TID:{dto.TerminalId.Trim()}|STAN:{dto.STAN.Trim()}";
+            }
+            else
+            {
+                // Fallback (UI değişmeden idempotency sağlamak için dakika bazlı anahtar)
+                // Aynı dakika içinde aynı PAN-bin + Amount + Currency + Acquirer => tek mesaj
+                var minuteKey = (dto.TxnTime ?? DateTime.Now).ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture);
+                externalId = string.Create(CultureInfo.InvariantCulture,
+                    $"{dto.Acquirer}|{bin}|{dto.Amount:0.00}|{cur}|{minuteKey}");
+            }
 
-            // 3) Idempotency: varsa aynı kaydı dön
-            var existing = await _dbContext.SwitchMessages.AsNoTracking()
+            // -- 3) Idempotency: varsa aynı kaydı dön
+            var existing = await _dbContext.SwitchMessages
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ExternalId == externalId);
+
             if (existing != null)
+            {
                 return _mapper.Map<SelectSwitchMessageDto>(existing);
+            }
 
             // 4) Mesajı ekle
             var msg = new SwitchMessage
