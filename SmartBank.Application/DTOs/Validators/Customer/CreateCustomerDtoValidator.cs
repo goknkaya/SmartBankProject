@@ -22,7 +22,9 @@ namespace SmartBank.Application.DTOs.Validators.Customer
             RuleFor(x => x.TCKN)
                 .NotEmpty().WithMessage("TCKN boş olamaz.")
                 .Length(11).WithMessage("TCKN 11 haneli olmalıdır.")
-                .Must(IsValidTckn).WithMessage("TCKN geçersiz. TCKN' nin son basamağı tüm rakamların toplamının birler basamağı olmalıdır.");
+                //.Must(IsValidTckn).WithMessage("TCKN geçersiz. TCKN' nin son basamağı tüm rakamların toplamının birler basamağı olmalıdır.");
+                .Matches("^[0-9]+$").WithMessage("TCKN sadece rakamlardan oluşmalıdır.");
+
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Telefon boş olamaz.")
