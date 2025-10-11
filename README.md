@@ -49,6 +49,11 @@ Proje; kart, müşteri, işlem, reversal, takas, switch ve chargeback modülleri
  
 
 ```markdown
-![CustomerView](Screenshots/customer_view.png)
-![TransactionView](Screenshots/transaction_view.png)
-![ClearingView](Screenshots/clearing_view.png)
+![LoginView](Screenshots/Login.png)
+![CustomerView](Screenshots/Customer.png)
+![CardView](Screenshots/Card.png)
+![TransactionView](Screenshots/Transaction.png)
+![SwitchView](Screenshots/Switch.png)
+![ClearingView](Screenshots/Clearing.png)
+![ReversalView](Screenshots/Reversal.png)
+![ChargebackView](Screenshots/Chargeback.png)
