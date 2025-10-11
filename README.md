@@ -48,12 +48,29 @@ Proje; kart, müşteri, işlem, reversal, takas, switch ve chargeback modülleri
 - **ChargebackView** (İtiraz ekranı ve log detayları)  
  
 
-```markdown
+## 📸 Ekran Görüntüleri
+
+### Login / Ana Menü
 ![LoginView](Screenshots/Login.png)
+
+### CustomerView (Müşteri listesi + ekleme ekranı)
 ![CustomerView](Screenshots/Customer.png)
+
+### CardView (Kart tanımlama + limit yönetimi)
 ![CardView](Screenshots/Card.png)
+
+### TransactionView (İşlem oluşturma ekranı)
 ![TransactionView](Screenshots/Transaction.png)
-![SwitchView](Screenshots/Switch.png)
+
+### ClearingView (IN/OUT dosyası eşleşmeleri)
 ![ClearingView](Screenshots/Clearing.png)
+
+### ReversalView (İşlem geri alma)
 ![ReversalView](Screenshots/Reversal.png)
+
+### SwitchView (POS yönlendirme akışı)
+![SwitchView](Screenshots/Switch.png)
+
+### ChargebackView (İtiraz ekranı)
 ![ChargebackView](Screenshots/Chargeback.png)
+
