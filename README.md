@@ -57,7 +57,7 @@ Proje; kart, müşteri, işlem, reversal, takas, switch ve chargeback modülleri
 
 ### CustomerView (Müşteri listesi + ekleme ekranı)
 ![CustomerView](Screenshots/Customer.png)
-Video Linki https://youtu.be/IPk7PgP_6SE
+![Video Linki](https://youtu.be/IPk7PgP_6SE)
 
 ### CardView (Kart tanımlama + limit yönetimi)
 ![CardView](Screenshots/Card.png)
