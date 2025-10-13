@@ -77,7 +77,7 @@ Video Linki: https://youtu.be/mYnOOTaaRA4
 
 ### SwitchView (POS yönlendirme akışı)
 ![SwitchView](Screenshots/Switch.png)
-Video Linki: https://studio.youtube.com/video/hQuz4-kvvxA/edit
+Video Linki: https://youtu.be/hQuz4-kvvxA
 
 ### ChargebackView (İtiraz ekranı)
 ![ChargebackView](Screenshots/Chargeback.png)
