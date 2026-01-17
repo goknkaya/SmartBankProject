@@ -39,13 +39,15 @@ Proje; kart, müşteri, işlem, reversal, takas, switch ve chargeback modülleri
 ---
 
 ## 📸 Ekran Görüntüleri
-*(Önerilen ekranlar aşağıda 👇)*  
+  
 - **Login / Ana Menü**  
 - **CustomerView** (Müşteri listesi + ekleme ekranı)  
 - **CardView** (Kart tanımlama + limit yönetimi)  
-- **TransactionView** (İşlem oluşturma ve görüntüleme)  
-- **ClearingView** (IN/OUT dosyası yükleme ve eşleşme sonuçları)  
-- **ChargebackView** (İtiraz ekranı ve log detayları)  
+- **TransactionView** (İşlem oluşturma ve görüntüleme)
+- **ReversalView** (İşlem geri alma)
+- **ClearingView** (IN/OUT dosyası yükleme ve eşleşme sonuçları)
+- **SwitchView** (POS yönlendirme akışı)
+- **ChargebackView** (İtiraz ekranı ve log detayları)
  
 
 ## 📸 Ekran Görüntüleri
@@ -55,22 +57,29 @@ Proje; kart, müşteri, işlem, reversal, takas, switch ve chargeback modülleri
 
 ### CustomerView (Müşteri listesi + ekleme ekranı)
 ![CustomerView](Screenshots/Customer.png)
+Video Linki: https://youtu.be/IPk7PgP_6SE
 
 ### CardView (Kart tanımlama + limit yönetimi)
 ![CardView](Screenshots/Card.png)
+Video Linki: https://youtu.be/0RutypJlmXI
 
 ### TransactionView (İşlem oluşturma ekranı)
 ![TransactionView](Screenshots/Transaction.png)
-
-### ClearingView (IN/OUT dosyası eşleşmeleri)
-![ClearingView](Screenshots/Clearing.png)
+Video Linki: https://youtu.be/aa1LaFIvAkM
 
 ### ReversalView (İşlem geri alma)
 ![ReversalView](Screenshots/Reversal.png)
+Video Linki: https://youtu.be/LIVLVQ-6TQI
+
+### ClearingView (IN/OUT dosyası eşleşmeleri)
+![ClearingView](Screenshots/Clearing.png)
+Video Linki: https://youtu.be/mYnOOTaaRA4
 
 ### SwitchView (POS yönlendirme akışı)
 ![SwitchView](Screenshots/Switch.png)
+Video Linki: https://youtu.be/hQuz4-kvvxA
 
 ### ChargebackView (İtiraz ekranı)
 ![ChargebackView](Screenshots/Chargeback.png)
+Video Linki: https://youtu.be/JCJXURkaX00
 
