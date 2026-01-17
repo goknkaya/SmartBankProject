@@ -46,6 +46,7 @@ builder.Services.AddScoped<IReversalService, ReversalService>();
 builder.Services.AddScoped<IChargebackService, ChargebackService>();
 builder.Services.AddScoped<IClearingService, ClearingService>();
 builder.Services.AddScoped<ISwitchService, SwitchService>();
+builder.Services.AddScoped<IFraudService, FraudService>();
 
 // ============= Controllers + JSON =============
 builder.Services.AddControllers().AddJsonOptions(o =>

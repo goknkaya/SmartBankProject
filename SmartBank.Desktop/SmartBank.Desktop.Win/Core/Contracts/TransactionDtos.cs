@@ -29,4 +29,12 @@ namespace SmartBank.Desktop.Win.Core.Contracts
         public DateTime TransactionDate { get; set; } = DateTime.Now; // ← fazladan default var
     }
 
+    public sealed class CreateTransactionResultDto
+    {
+        public int TransactionId { get; set; }
+        public string Status { get; init; } = "S";          // S: Success, R: Review, B: Blocked
+        public int FraudScore { get; init; }
+        public string FraudDecision { get; init; } = "A";   // A: Approve, R: Review, B: Block
+        public string Message { get; set; } = "";
+    }
 }

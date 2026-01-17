@@ -13,12 +13,14 @@ namespace SmartBank.Application.Services
     {
         private readonly CustomerCoreDbContext _dbContext;
         private readonly IMapper _mapper;
-        public TransactionService(CustomerCoreDbContext dbContext, IMapper mapper)
+        private readonly IFraudService _fraudService;
+        public TransactionService(CustomerCoreDbContext dbContext, IMapper mapper, IFraudService fraudService)
         {
             _dbContext = dbContext;
             _mapper = mapper;
+            _fraudService = fraudService;
         }
-        public async Task<bool> CreateTransactionAsync(CreateTransactionDto dto)
+        public async Task<CreateTransactionResultDto> CreateTransactionAsync(CreateTransactionDto dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -30,6 +32,15 @@ namespace SmartBank.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Currency) || dto.Currency.Length != 3)
                 throw new InvalidOperationException("Para birimi 3 haneli olmalıdır (örn: TRY).");
 
+            // Status / Decision sabitleri (magic string olmasın)
+            const string TxApproved = "S";
+            const string TxReview = "R";
+            const string TxBlocked = "B";
+
+            const string FraudApprove = "A";
+            const string FraudReview = "R";
+            const string FraudBlock = "B";
+
             // 1) Kart + durum kontrolü
             var card = await _dbContext.Cards
                 .FirstOrDefaultAsync(c => c.Id == dto.CardId && c.IsActive);
@@ -40,14 +51,14 @@ namespace SmartBank.Application.Services
             if (card.IsBlocked)
                 throw new InvalidOperationException("Bu kart blokeli olduğundan işlem yapılamaz.");
 
-            // 2) Günlük harcama (bugün)
-            var todayUtc = DateTime.Now.Date;
+            // 2) Günlük harcama (bugün) - sadece APPROVED işlemler sayılır
+            var today = DateTime.Now.Date;
             var spentToday = await _dbContext.Transactions
                 .Where(t => t.CardId == dto.CardId
-                            && t.Status == "S"
+                            && t.Status == TxApproved
                             && !t.IsReversed
-                            && t.TransactionDate >= todayUtc
-                            && t.TransactionDate < todayUtc.AddDays(1))
+                            && t.TransactionDate >= today
+                            && t.TransactionDate < today.AddDays(1))
                 .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
             // 3) Limit kontrolleri
@@ -65,7 +76,10 @@ namespace SmartBank.Application.Services
             if (dto.Amount > card.CardLimit)
                 throw new InvalidOperationException("Yetersiz bakiye.");
 
-            // 4) Atomik işlem
+            // 4) Fraud kontrolü (DB transaction'a girmeden)
+            var fraudResult = await _fraudService.CheckAsync(card, dto, spentToday);
+
+            // 5) Atomik işlem
             using var tx = await _dbContext.Database.BeginTransactionAsync();
             try
             {
@@ -76,28 +90,54 @@ namespace SmartBank.Application.Services
                     Currency = dto.Currency,
                     Description = dto.Description,
                     TransactionDate = dto.TransactionDate == default ? DateTime.Now : dto.TransactionDate,
-                    Status = "S",
-                    IsReversed = false
+                    IsReversed = false,
+
+                    FraudScore = fraudResult.Score,
+                    FraudDecision = fraudResult.Decision,
+                    FraudCheckedAt = DateTime.Now
                 };
 
-                // >>> NEW: SignatureHash doldur
+                // Status (fraud kararına göre)
+                transaction.Status =
+                    fraudResult.Decision == FraudApprove ? TxApproved :
+                    fraudResult.Decision == FraudReview ? TxReview :
+                    TxBlocked;
+
+                // SignatureHash
                 transaction.SignatureHash = SignatureUtil.ComputeFromPan(
-                    pan: card.CardNumber,                   // PAN varsa; maskeli bile olsa util son 4’ü normalize ediyor
+                    pan: card.CardNumber,
                     amount: transaction.Amount,
                     currency: transaction.Currency,
                     txDate: transaction.TransactionDate,
                     merchant: transaction.Description
                 );
 
-                card.CardLimit -= dto.Amount;
-                card.UpdatedAt = DateTime.Now;
+                // Sadece approved ise bakiye düş
+                if (fraudResult.Decision == FraudApprove)
+                {
+                    card.CardLimit -= dto.Amount;
+                    card.UpdatedAt = DateTime.Now;
+                    _dbContext.Cards.Update(card);
+                }
 
                 _dbContext.Transactions.Add(transaction);
-                _dbContext.Cards.Update(card);
 
                 await _dbContext.SaveChangesAsync();
                 await tx.CommitAsync();
-                return true;
+
+                // ✅ Artık bool değil, detaylı sonuç dönüyoruz
+                return new CreateTransactionResultDto
+                {
+                    TransactionId = transaction.Id,
+                    Status = transaction.Status,
+                    FraudScore = transaction.FraudScore,
+                    FraudDecision = transaction.FraudDecision,
+                    Message = transaction.Status == TxApproved
+                        ? "Onaylandı"
+                        : transaction.Status == TxReview
+                            ? "İşlem incelemeye alındı"
+                            : "İşlem güvenlik nedeniyle engellendi"
+                };
             }
             catch
             {
@@ -168,8 +208,8 @@ namespace SmartBank.Application.Services
 
             var transactions = await _dbContext.Transactions
                 .AsNoTracking()
-                .Where(t=>t.CardId == cardId)
-                .OrderByDescending(t=>t.TransactionDate)
+                .Where(t => t.CardId == cardId)
+                .OrderByDescending(t => t.TransactionDate)
                 .ToListAsync();
 
             return _mapper.Map<List<SelectTransactionDto>>(transactions).ToList();

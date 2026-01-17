@@ -27,9 +27,8 @@ namespace SmartBank.Api.Controllers
                 return BadRequest(ModelState);
 
             var result = await _transactionService.CreateTransactionAsync(dto);
-            if (result)
-                return Ok("İşlem başarıyla oluşturuldu.");
-            return BadRequest("İşlem oluşturulamadı.");
+            
+            return Ok(result);
         }
 
         /// <summary>

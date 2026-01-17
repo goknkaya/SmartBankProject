@@ -24,7 +24,7 @@ namespace SmartBank.Domain.Entities
 
         [Required]
         [MaxLength(1)]
-        public string Status { get; set; } // S-uccess, F-ailed, R-eversed
+        public string Status { get; set; } = "S"; // S: Success, F: Failed, R: Review, V: Reversed
         public DateTime TransactionDate { get; set; }
 
         [MaxLength(100)]
@@ -37,5 +37,12 @@ namespace SmartBank.Domain.Entities
 
         [MaxLength(64)]
         public string? SignatureHash { get; set; }
+        public int FraudScore { get; set; }
+
+        [Required]
+        [MaxLength(1)]
+        public string FraudDecision { get; set; } = "A"; // A: Approved, R: Review, B: Block
+        public DateTime? FraudCheckedAt { get; set; }
+
     }
 }

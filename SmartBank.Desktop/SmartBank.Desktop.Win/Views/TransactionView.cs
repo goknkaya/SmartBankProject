@@ -231,9 +231,24 @@ namespace SmartBank.Desktop.Win.Views
 
             try
             {
-                await _api.PostAsync<CreateTransactionDto, object?>("api/Transaction", dto);
+                var result = await _api.PostAsync<CreateTransactionDto, CreateTransactionResultDto>("api/Transaction", dto);
+
                 await ClearAndReloadAsync();
-                MessageBox.Show("İşlem oluşturuldu.", "Bilgi");
+
+                var statusText = result?.Status switch
+                {
+                    "S" => "ONAYLANDI",
+                    "R" => "BEKLEMEYE ALINDI",
+                    "B" => "BLOKLANDI",
+                    "V" => "REVERSAL",
+                    _ => "BİLİNMİYOR"
+                };
+
+                var extra = result is null
+                    ? ""
+                    : $"\n\nTxId: {result.TransactionId}\nFraud: {result.FraudDecision} (Score: {result.FraudScore})";
+
+                MessageBox.Show($"{statusText}\n{result?.Message}{extra}", "Transaction Sonucu");
             }
             catch (ApiException ex) { ShowApiError("İşlem oluşturma", ex); }
             catch (Exception ex) { MessageBox.Show(ex.Message, "İşlem oluşturma"); }
