@@ -2,8 +2,9 @@
 using SmartBank.Desktop.Win.Core.Contracts;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel; // BindingList
+using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -25,7 +26,7 @@ namespace SmartBank.Desktop.Win.Views
         public TransactionView(ApiClient api)
         {
             InitializeComponent();
-            _api = api;
+            _api = api ?? throw new ArgumentNullException(nameof(api));
 
             _bs.DataSource = typeof(SelectTransactionDto);
 
@@ -82,6 +83,7 @@ namespace SmartBank.Desktop.Win.Views
             dtpDate.Format = DateTimePickerFormat.Custom;
             dtpDate.CustomFormat = "dd MMM yyyy HH:mm";
             dtpDate.ShowUpDown = true;
+            dtpDate.Value = DateTime.Now;
 
             // Kart listesi (LoadCardsAsync dolduracak)
             cboCard.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -97,7 +99,7 @@ namespace SmartBank.Desktop.Win.Views
             cboCurrency.DataBindings.Clear();
             dtpDate.DataBindings.Clear();
 
-            // ⚠ Arama kutularını binding’e bağlamıyoruz (manuel yöneteceğiz)
+            // Arama kutularını binding’e bağlamıyoruz (manuel yöneteceğiz)
             txtSearchId.DataBindings.Clear();
             txtSearchCardId.DataBindings.Clear();
 
@@ -129,7 +131,7 @@ namespace SmartBank.Desktop.Win.Views
                 // Kart listesi geldiyse Card metinlerini doldur
                 FillCardTexts(_rows);
 
-                // Grid’e bağla + desc sıralama
+                // Grid’e bağla
                 BindRows(_rows);
 
                 // Temizlik anındaysak, seçim olmasın
@@ -220,6 +222,7 @@ namespace SmartBank.Desktop.Win.Views
             if (cboCurrency.SelectedItem is not string curr || curr.Length != 3)
             { MessageBox.Show("Para birimi hatalı.", "Uyarı"); return; }
 
+            // Not: API tarafında server zamanı esas alınsa bile, UI tarafında kullanıcı seçimiyle gönderiyoruz.
             var dto = new CreateTransactionDto
             {
                 CardId = cardId,
@@ -233,22 +236,19 @@ namespace SmartBank.Desktop.Win.Views
             {
                 var result = await _api.PostAsync<CreateTransactionDto, CreateTransactionResultDto>("api/Transaction", dto);
 
-                await ClearAndReloadAsync();
+                // Sonuca göre kullanıcıya detay göster
+                ShowCreateResult(result);
 
-                var statusText = result?.Status switch
-                {
-                    "S" => "ONAYLANDI",
-                    "R" => "BEKLEMEYE ALINDI",
-                    "B" => "BLOKLANDI",
-                    "V" => "REVERSAL",
-                    _ => "BİLİNMİYOR"
-                };
+                // Listeyi tazele (son işlem görünsün)
+                await LoadAllAsync();
 
-                var extra = result is null
-                    ? ""
-                    : $"\n\nTxId: {result.TransactionId}\nFraud: {result.FraudDecision} (Score: {result.FraudScore})";
+                // En son oluşan TxId’yi gridde seçmeye çalış
+                SelectRowByTxId(result?.TransactionId);
 
-                MessageBox.Show($"{statusText}\n{result?.Message}{extra}", "Transaction Sonucu");
+                // Formu kısmen resetle (kullanıcı kart seçimini kaybetmesin diye kartı temizlemiyoruz)
+                nudAmount.Value = 0;
+                dtpDate.Value = DateTime.Now;
+                txtDesc.Clear();
             }
             catch (ApiException ex) { ShowApiError("İşlem oluşturma", ex); }
             catch (Exception ex) { MessageBox.Show(ex.Message, "İşlem oluşturma"); }
@@ -349,6 +349,61 @@ namespace SmartBank.Desktop.Win.Views
             txtDesc.Text = r.Description ?? "";
         }
 
+        private void ShowCreateResult(CreateTransactionResultDto? result)
+        {
+            if (result == null)
+            {
+                MessageBox.Show("İşlem sonucu alınamadı.", "Transaction Sonucu");
+                return;
+            }
+
+            var statusText = result.Status switch
+            {
+                "S" => "ONAYLANDI",
+                "R" => "İNCELEMEYE ALINDI",
+                "B" => "BLOKLANDI",
+                "V" => "REVERSAL",
+                _ => "BİLİNMİYOR"
+            };
+
+            var sb = new StringBuilder();
+            sb.AppendLine(statusText);
+            if (!string.IsNullOrWhiteSpace(result.Message))
+                sb.AppendLine(result.Message);
+
+            sb.AppendLine();
+            sb.AppendLine($"TxId: {result.TransactionId}");
+            sb.AppendLine($"FraudDecision: {result.FraudDecision} | Score: {result.FraudScore}");
+
+            if (result.FraudReasons != null && result.FraudReasons.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("Nedenler:");
+                foreach (var r in result.FraudReasons)
+                    sb.AppendLine($"- {r}");
+            }
+
+            MessageBox.Show(sb.ToString(), "Transaction Sonucu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void SelectRowByTxId(int? txId)
+        {
+            if (!txId.HasValue || txId.Value <= 0) return;
+
+            // BindingList içinde bul ve seç
+            for (int i = 0; i < dgvTx.Rows.Count; i++)
+            {
+                if (dgvTx.Rows[i].DataBoundItem is SelectTransactionDto dto && dto.Id == txId.Value)
+                {
+                    dgvTx.ClearSelection();
+                    dgvTx.Rows[i].Selected = true;
+                    dgvTx.CurrentCell = dgvTx.Rows[i].Cells[0];
+                    dgvTx.FirstDisplayedScrollingRowIndex = i;
+                    return;
+                }
+            }
+        }
+
         // ================== ERRORS ==================
 
         private void ShowApiError(string title, ApiException ex)
@@ -359,11 +414,12 @@ namespace SmartBank.Desktop.Win.Views
             string userMsg = ex.StatusCode switch
             {
                 400 => body != "" ? body : "Geçersiz istek.",
+                401 => "Yetkisiz. Token/Authorize kontrol et.",
                 404 => "Kayıt bulunamadı.",
                 409 => body != "" ? body : "İş kuralı ihlali.",
                 500 => body.Contains("limit", StringComparison.OrdinalIgnoreCase)
                         ? "İşlem tutarı limitleri aşıyor."
-                        : "Sunucu hatası.",
+                        : (body != "" ? body : "Sunucu hatası."),
                 _ => body != "" ? body : $"İşlem başarısız. Kod: {ex.StatusCode}"
             };
 

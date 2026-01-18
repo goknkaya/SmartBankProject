@@ -32,9 +32,10 @@ namespace SmartBank.Desktop.Win.Core.Contracts
     public sealed class CreateTransactionResultDto
     {
         public int TransactionId { get; set; }
-        public string Status { get; init; } = "S";          // S: Success, R: Review, B: Blocked
-        public int FraudScore { get; init; }
-        public string FraudDecision { get; init; } = "A";   // A: Approve, R: Review, B: Block
+        public string Status { get; set; } = "";
+        public int FraudScore { get; set; }
+        public string FraudDecision { get; set; } = "";
+        public List<string> FraudReasons { get; set; } = new();
         public string Message { get; set; } = "";
     }
 }

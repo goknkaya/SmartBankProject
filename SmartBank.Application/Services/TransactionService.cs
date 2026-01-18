@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SmartBank.Application.DTOs.Transaction;
 using SmartBank.Application.Interfaces;
@@ -14,16 +13,17 @@ namespace SmartBank.Application.Services
         private readonly CustomerCoreDbContext _dbContext;
         private readonly IMapper _mapper;
         private readonly IFraudService _fraudService;
+
         public TransactionService(CustomerCoreDbContext dbContext, IMapper mapper, IFraudService fraudService)
         {
             _dbContext = dbContext;
             _mapper = mapper;
             _fraudService = fraudService;
         }
+
         public async Task<CreateTransactionResultDto> CreateTransactionAsync(CreateTransactionDto dto)
         {
-            if (dto == null)
-                throw new ArgumentNullException(nameof(dto));
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
 
             // 0) Baz doğrulamalar
             if (dto.Amount <= 0)
@@ -32,7 +32,7 @@ namespace SmartBank.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Currency) || dto.Currency.Length != 3)
                 throw new InvalidOperationException("Para birimi 3 haneli olmalıdır (örn: TRY).");
 
-            // Status / Decision sabitleri (magic string olmasın)
+            // Status / Decision sabitleri
             const string TxApproved = "S";
             const string TxReview = "R";
             const string TxBlocked = "B";
@@ -41,19 +41,24 @@ namespace SmartBank.Application.Services
             const string FraudReview = "R";
             const string FraudBlock = "B";
 
+            // Server clock -> her yerde aynı zamanı kullan
+            var serverNow = DateTime.Now;
+
             // 1) Kart + durum kontrolü
             var card = await _dbContext.Cards
                 .FirstOrDefaultAsync(c => c.Id == dto.CardId && c.IsActive);
 
-            if (card == null)
+            if (card is null)
                 throw new InvalidOperationException("İşlem yapılacak kart bulunamadı veya pasif.");
 
             if (card.IsBlocked)
                 throw new InvalidOperationException("Bu kart blokeli olduğundan işlem yapılamaz.");
 
             // 2) Günlük harcama (bugün) - sadece APPROVED işlemler sayılır
-            var today = DateTime.Now.Date;
+            var today = serverNow.Date;
+
             var spentToday = await _dbContext.Transactions
+                .AsNoTracking()
                 .Where(t => t.CardId == dto.CardId
                             && t.Status == TxApproved
                             && !t.IsReversed
@@ -61,7 +66,7 @@ namespace SmartBank.Application.Services
                             && t.TransactionDate < today.AddDays(1))
                 .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
-            // 3) Limit kontrolleri
+            // 3) Limit kontrolleri (fraud’dan önce)
             if (dto.Amount > card.TransactionLimit)
                 throw new InvalidOperationException("İşlem tutarı, tek işlem limitini aşıyor.");
 
@@ -76,7 +81,7 @@ namespace SmartBank.Application.Services
             if (dto.Amount > card.CardLimit)
                 throw new InvalidOperationException("Yetersiz bakiye.");
 
-            // 4) Fraud kontrolü (DB transaction'a girmeden)
+            // 4) Fraud kontrolü (DB transaction’a girmeden)
             var fraudResult = await _fraudService.CheckAsync(card, dto, spentToday);
 
             // 5) Atomik işlem
@@ -89,12 +94,14 @@ namespace SmartBank.Application.Services
                     Amount = dto.Amount,
                     Currency = dto.Currency,
                     Description = dto.Description,
-                    TransactionDate = dto.TransactionDate == default ? DateTime.Now : dto.TransactionDate,
+
+                    // TransactionDate: SERVER TIME (velocity için garanti)
+                    TransactionDate = serverNow,
                     IsReversed = false,
 
                     FraudScore = fraudResult.Score,
                     FraudDecision = fraudResult.Decision,
-                    FraudCheckedAt = DateTime.Now
+                    FraudCheckedAt = serverNow
                 };
 
                 // Status (fraud kararına göre)
@@ -116,7 +123,7 @@ namespace SmartBank.Application.Services
                 if (fraudResult.Decision == FraudApprove)
                 {
                     card.CardLimit -= dto.Amount;
-                    card.UpdatedAt = DateTime.Now;
+                    card.UpdatedAt = serverNow;
                     _dbContext.Cards.Update(card);
                 }
 
@@ -125,18 +132,20 @@ namespace SmartBank.Application.Services
                 await _dbContext.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                // ✅ Artık bool değil, detaylı sonuç dönüyoruz
+                // Mesajı tek yerden üret
+                var message =
+                    transaction.Status == TxApproved ? "Onaylandı" :
+                    transaction.Status == TxReview ? "Manuel incelemeye alındı" :
+                    "Fraud kuralları nedeniyle bloklandı";
+
                 return new CreateTransactionResultDto
                 {
                     TransactionId = transaction.Id,
                     Status = transaction.Status,
                     FraudScore = transaction.FraudScore,
                     FraudDecision = transaction.FraudDecision,
-                    Message = transaction.Status == TxApproved
-                        ? "Onaylandı"
-                        : transaction.Status == TxReview
-                            ? "İşlem incelemeye alındı"
-                            : "İşlem güvenlik nedeniyle engellendi"
+                    FraudReasons = fraudResult.Reasons,
+                    Message = message
                 };
             }
             catch
@@ -196,12 +205,12 @@ namespace SmartBank.Application.Services
 
         public async Task<List<SelectTransactionDto>> GetTransactionByCardIdAsync(int cardId)
         {
-            if (cardId < 0)
+            if (cardId <= 0)
                 throw new ArgumentException("Geçersiz kart Id.");
 
             var cardExists = await _dbContext.Cards
-                                            .AsNoTracking()
-                                            .AnyAsync(c => c.Id == cardId && c.IsActive);
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == cardId && c.IsActive);
 
             if (!cardExists)
                 throw new KeyNotFoundException("Kart bulunamadı veya pasif.");
@@ -212,14 +221,14 @@ namespace SmartBank.Application.Services
                 .OrderByDescending(t => t.TransactionDate)
                 .ToListAsync();
 
-            return _mapper.Map<List<SelectTransactionDto>>(transactions).ToList();
+            return _mapper.Map<List<SelectTransactionDto>>(transactions);
         }
 
         private static string MaskPan(string? pan)
         {
             if (string.IsNullOrWhiteSpace(pan)) return "";
             var digits = new string(pan.Where(char.IsDigit).ToArray());
-            if (digits.Length <= 10) return digits;    // kısa pan: maskeleme uygulama
+            if (digits.Length <= 10) return digits;
             var first6 = digits[..6];
             var last4 = digits[^4..];
             return first6 + new string('*', digits.Length - 10) + last4;

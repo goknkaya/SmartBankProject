@@ -141,6 +141,7 @@ app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous();
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.Now })).AllowAnonymous();
 
 // ============== Tüm controller'lar JWT ister ==============
-app.MapControllers().RequireAuthorization();
+//app.MapControllers().RequireAuthorization();
+app.MapControllers();
 
 app.Run();

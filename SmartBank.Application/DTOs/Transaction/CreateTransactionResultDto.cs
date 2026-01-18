@@ -12,7 +12,8 @@ namespace SmartBank.Application.DTOs.Transaction
         public string Status { get; init; } = "S";          // S: Success, R: Review, B: Blocked
         public int FraudScore { get; init; }
         public string FraudDecision { get; init; } = "A";   // A: Approve, R: Review, B: Block
-        public string Message { get; init; } = string.Empty;
+        public List<string> FraudReasons { get; init; } = new();
+        public string Message { get; init; } = "";
 
     }
 }
